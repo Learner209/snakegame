@@ -218,7 +218,6 @@ void Game::initializeGame()
 
 
     // TODO
-    this->adjustDelay();
     //1.initialize the game points as zero
     this->mPoints = 0;
     //2. create a food at random place
@@ -227,6 +226,7 @@ void Game::initializeGame()
     this->mPtrSnake->senseFood(this->mFood);
     //4.initialize the difficulty
     this->renderDifficulty();
+    this->adjustDelay();
 }
 
 void Game::createRandomFood()
@@ -361,9 +361,11 @@ void Game::runGame()
             box(mWindows[1], 0, 0);
             this->renderFood();
             this->renderSnake();
+            this->renderDifficulty();
          // 8. update other game states and refresh the window
             if (moveSuccess) this->mPoints++;
             this->renderPoints();
+            this->adjustDelay();
             moveSuccess = false;
             std::this_thread::sleep_for(std::chrono::milliseconds(this->mDelay));
             refresh();
