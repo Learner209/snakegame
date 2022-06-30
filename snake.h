@@ -22,6 +22,8 @@ public:
     SnakeBody(int x, int y);
     int getX() const;
     int getY() const;
+    bool setX(int axis_x);
+    bool setY(int axis_y);
     bool operator == (const SnakeBody& snakeBody);
 private:
     int mX;
@@ -43,7 +45,6 @@ public:
     void senseFood(SnakeBody food);
     bool touchFood();
     // Check if the snake is dead
-    bool hitWall();
     bool hitSelf();
     bool checkCollision();
 

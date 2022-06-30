@@ -218,6 +218,7 @@ void Game::initializeGame()
 
 
     // TODO
+    this->adjustDelay();
     //1.initialize the game points as zero
     this->mPoints = 0;
     //2. create a food at random place
@@ -364,7 +365,7 @@ void Game::runGame()
             if (moveSuccess) this->mPoints++;
             this->renderPoints();
             moveSuccess = false;
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            std::this_thread::sleep_for(std::chrono::milliseconds(this->mDelay));
             refresh();
     }
 }
