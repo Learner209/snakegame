@@ -105,7 +105,7 @@ bool Snake::hitSelf()
 }
 
 
-bool Snake::touchFood()
+/*bool Snake::touchFood()
 {
     SnakeBody newHead = this->createNewHead();
     if (this->mFood == newHead)
@@ -116,7 +116,7 @@ bool Snake::touchFood()
     {
         return false;
     }
-}
+}*/
 
 void Snake::senseFood(SnakeBody food)
 {
@@ -202,7 +202,7 @@ bool Snake::moveFoward()
      * If eat food, return true, otherwise return false
      */
     SnakeBody newHead = this->createNewHead();
-    if (touchFood()) {
+    if (newHead == mFood) {
         this->mSnake.insert(this->mSnake.cbegin(), newHead);
         return true;
     }

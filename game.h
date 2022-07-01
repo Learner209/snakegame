@@ -74,7 +74,7 @@ private:
     int mDifficulty = 0;
     int mBaseDelay = 100;
     int mDelay;
-    const std::string mRecordBoardFilePath = "record.dat";
+    const std::string mRecordBoardFilePath = "record.txt";
     std::vector<int> mLeaderBoard;
     const int mNumLeaders = 3;
 };

@@ -64,7 +64,7 @@ void Game::renderInformationBoard() const
     mvwprintw(this->mWindows[0], 2, 1, "Author Minghao Liu");
     mvwprintw(this->mWindows[0], 3, 1, " ");
     mvwprintw(this->mWindows[0], 4, 1, "Implemented using C++ and libncurses library.");
-    wrefresh(this->mWindows[0]);
+    wnoutrefresh(this->mWindows[0]);
 }
 
 void Game::createGameBoard()
@@ -76,7 +76,7 @@ void Game::createGameBoard()
 
 void Game::renderGameBoard() const
 {
-    wrefresh(this->mWindows[1]);
+    wnoutrefresh(this->mWindows[1]);
 }
 
 void Game::createInstructionBoard()
@@ -98,7 +98,7 @@ void Game::renderInstructionBoard() const
     mvwprintw(this->mWindows[2], 8, 1, "Difficulty");
     mvwprintw(this->mWindows[2], 11, 1, "Points");
 
-    wrefresh(this->mWindows[2]);
+    wnoutrefresh(this->mWindows[2]);
 }
 
 
@@ -226,6 +226,8 @@ void Game::initializeGame()
     this->mPtrSnake->senseFood(this->mFood);
     //4.initialize the difficulty
     this->renderDifficulty();
+    //5.Adjust delay
+    this->adjustDelay();
 }
 
 void Game::createRandomFood()
@@ -245,8 +247,8 @@ void Game::createRandomFood()
 
 void Game::renderFood() const
 {
-    mvwaddch(this->mWindows[1],mFood.getY(), mFood.getX(), this->mFoodSymbol);
-    wrefresh(this->mWindows[1]);
+    mvwaddch(this->mWindows[1],mFood.getY(), mFood.getX(), ACS_DIAMOND);
+    wnoutrefresh(this->mWindows[1]);
 }
 
 void Game::renderSnake() const
@@ -255,9 +257,9 @@ void Game::renderSnake() const
     std::vector<SnakeBody>& snake = this->mPtrSnake->getSnake();
     for (int i = 0; i < snakeLength; i ++)
     {
-        mvwaddch(this->mWindows[1], snake[i].getY(), snake[i].getX(), this->mSnakeSymbol);
+        mvwaddch(this->mWindows[1], snake[i].getY(), snake[i].getX(), mSnakeSymbol);
     }
-    wrefresh(this->mWindows[1]);
+    wnoutrefresh(this->mWindows[1]);
 }
 
 void Game::controlSnake() const
@@ -308,6 +310,7 @@ void Game::controlSnake() const
 
 void Game::renderBoards() const
 {
+
     for (int i = 0; i < this->mWindows.size(); i ++)
     {
         werase(this->mWindows[i]);
@@ -315,10 +318,10 @@ void Game::renderBoards() const
     this->renderInformationBoard();
     this->renderGameBoard();
     this->renderInstructionBoard();
+    doupdate();
     for (int i = 0; i < this->mWindows.size(); i ++)
     {
         box(this->mWindows[i], 0, 0);
-        wrefresh(this->mWindows[i]);
     }
     this->renderLeaderBoard();
 }
@@ -345,27 +348,31 @@ void Game::runGame()
          // 1. process your keyboard input
             this->controlSnake();
          // 2. clear the window
-            wclear(mWindows[1]);
+            werase(mWindows[1]);
+            box(mWindows[1], 0, 0);
          // 3. move the current snake forward
             if (this->mPtrSnake->moveFoward()) moveSuccess = true;
          // 4. check if the snake has eaten the food after movement
          // 5. check if the snake dies after the movement
             if (this->mPtrSnake->checkCollision()) return;
          // 6. make corresponding steps for the ``if conditions'' in 3 and 4.
-            if (moveSuccess) {
+            if (moveSuccess){
                 this->createRandomFood();
                 this->mPtrSnake->senseFood(this->mFood);
             }
          // 7. render the position of the food and snake in the new frame of window.
-            box(mWindows[1], 0, 0);
             this->renderFood();
             this->renderSnake();
+            doupdate();
          // 8. update other game states and refresh the window
             if (moveSuccess) this->mPoints++;
             this->renderPoints();
+            this->renderDifficulty();
             moveSuccess = false;
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            refresh();
+            // refresh();
+            std::this_thread::sleep_for(std::chrono::milliseconds(this->mDelay));
+            this->adjustDelay();
+
     }
 }
 
@@ -393,9 +400,10 @@ void Game::startGame()
 bool Game::readLeaderBoard()
 {
     std::fstream fhand(this->mRecordBoardFilePath, fhand.binary | fhand.in);
-    if (!fhand.is_open())
-    {
+    if (!fhand.is_open()){
+
         return false;
+
     }
     int temp;
     int i = 0;
@@ -434,6 +442,7 @@ bool Game::writeLeaderBoard()
     if (!fhand.is_open())
     {
         return false;
+
     }
     for (int i = 0; i < this->mNumLeaders; i ++)
     {
