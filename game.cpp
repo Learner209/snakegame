@@ -1,7 +1,7 @@
 //
 // Created by bitch on 6/29/22.
 //
-
+#include <cassert>
 #include "game.h"
 
 #include <string>
@@ -27,8 +27,9 @@ Game::Game()
     keypad(stdscr, true);
     // No echo for the key pressed
     noecho();
-    // No cursor show
+    // cursor set
     curs_set(0);
+    mousemask(BUTTON1_CLICKED | ALL_MOUSE_EVENTS, NULL);
     // Get screen and board parameters
     getmaxyx(stdscr, this->mScreenHeight, this->mScreenWidth);
     this->mGameBoardWidth = this->mScreenWidth - this->mInstructionWidth;
@@ -58,13 +59,20 @@ void Game::createInformationBoard()
     this->mWindows[0] = newwin(this->mInformationHeight, this->mScreenWidth, startY, startX);
 }
 
-void Game::renderInformationBoard() const
+void Game::renderInformationBoard(int & choice)
 {
-    mvwprintw(this->mWindows[0], 1, 1, "Welcome to The Snake Game!");
-    mvwprintw(this->mWindows[0], 2, 1, " MingHao Liu");
-    mvwprintw(this->mWindows[0], 3, 1, " ");
-    mvwprintw(this->mWindows[0], 4, 1, "Implemented using C++ and libncurses library.");
+    box(this->mWindows[0], 0, 0);
+    std::vector<std::string> information = {"Menu", "Mode", "Settings", "Customize", "Help", "Quit"};
+    int whitespace = (mScreenWidth - 3) / information.size();
+    for (int offset = 0; offset < information.size(); offset++)
+    {
+        mvwaddch(this->mWindows[0], 0, 1 + (offset + 0.5) * whitespace + information[offset].size() * 0.5, ACS_TTEE);
+        mvwaddch(this->mWindows[0], 1, 1 + (offset + 0.5) * whitespace + information[offset].size() * 0.5, ACS_VLINE);
+        mvwaddch(this->mWindows[0], 2, 1 + (offset + 0.5) * whitespace + information[offset].size() * 0.5, ACS_BTEE);
+    }
+    choice = menuSelect(this->mWindows[0], information, 1, 1, -1, false);
     wnoutrefresh(this->mWindows[0]);
+    doupdate();
 }
 
 void Game::createGameBoard()
@@ -122,7 +130,7 @@ void Game::renderLeaderBoard() const
     wrefresh(this->mWindows[2]);
 }
 
-Status Game::renderMenu(Status status) const
+Status Game::renderMenu(Status status)
 {
     WINDOW * menu;
     float width, height, startX, startY;
@@ -161,7 +169,7 @@ Status Game::renderMenu(Status status) const
             wnoutrefresh(mWindows[i]);
         }
         doupdate();
-        mvwprintw(menu, 6, (width - 24) / 2, "Welcome to the Snake Game!");
+        mvwprintw(menu, height * (1 - 0.8), (width - 24) / 2, "Welcome to the Snake Game!");
         menuItems.insert(menuItems.begin() + 1, "Mode");
         menuItems.insert(menuItems.begin() + 2, "Settings");
         axis_x = (width - 8) / 2;
@@ -187,20 +195,22 @@ Status Game::renderMenu(Status status) const
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
 
-    if (index < size && menuItems[index] == "New Game") {
+    if (-1 < index && index < size && menuItems[index] == "New Game") {
         return NEW_GAME;
-    } else if (index < size && menuItems[index] == "Resume") {
+    } else if (-1 < index && index < size && menuItems[index] == "Resume") {
         return RESUME_GAME;
-    } else if (index < size && menuItems[index] == "Quit") {
+    } else if (index == -1){
+        return ABNORMAL_EXIT;
+    } else if (-1 < index && index < size && menuItems[index] == "Quit") {
         return QUIT;
-    } else if (index < size && menuItems[index] == "Main Menu") {
+    } else if (-1 < index && index < size && menuItems[index] == "Main Menu") {
         return MAIN_MENU;
-    } else if (index < size && menuItems[index] == "Settings"){
+    } else if (-1 < index && index < size && menuItems[index] == "Settings"){
         return SETTINGS;
-    } else if (index < size && menuItems[index] == "Mode"){
+    } else if (-1 < index && index < size && menuItems[index] == "Mode"){
         return MODE;
     }
-    return QUIT;
+    return ABNORMAL_EXIT;
 }
 
 void Game::renderSettings()
@@ -212,7 +222,7 @@ void Game::renderSettings()
     WINDOW * setting = newwin(this->mScreenHeight * 0.618, this->mScreenWidth * 0.618, startY, startX);
     box(setting, 0, 0);
 
-    std:std::vector<std::string> settings = {"Difficulty:", "Dynamic Difficulty:", "Has walls:"};
+    std:std::vector<std::string> settings = {"Difficulty:", "Has Dynamic Difficulty:", "Has walls:"};
 
     while(true) {
 
@@ -238,7 +248,19 @@ void Game::renderSettings()
             return;
         }
         else if (index == 0) {
-
+            WINDOW * setwin = newwin(3, mScreenWidth - 2, 0, 1);
+            box(setwin, 0, 0);
+            int whitespace = (mScreenWidth - 2) / 10;
+            tmp = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"};
+            choice = this->menuSelect(setwin, tmp, 1, 1, whitespace, 0, false);
+            if (choice >= 0)
+            {
+                this->mDifficulty_init = choice;
+                adjustDelay();
+            }
+            werase(setwin);
+            wrefresh(setwin);
+            delwin(setwin);
         }
         else if (index == 1)
         {
@@ -270,10 +292,18 @@ void Game::renderSettings()
             if (choice) this->has_walls = false;
             else this->has_walls = true;
         }
-
+        werase(setting);
+        box(setting, 0, 0);
+        wrefresh(setting);
     }
 
 
+}
+
+void Game::renderMode() const
+{
+
+    std::vector<std::string> modes = {"Terrain", ""};
 }
 void Game::renderPoints() const
 {
@@ -302,10 +332,10 @@ void Game::initializeGame()
     this->createRandomFood();
     //3.make the snake aware of the food
     this->mPtrSnake->senseFood(this->mFood);
-    //4.initialize the difficulty
-    this->renderDifficulty();
-    //5.Adjust delay
+    //4.Adjust delay
     this->adjustDelay();
+    //5.initialize the difficulty
+    this->renderDifficulty();
     //6.Check if it has walls
     this->mPtrSnake->hasWalls(this->has_walls);
 }
@@ -397,34 +427,29 @@ bool Game::controlSnake() const
 void Game::renderBoards() const
 {
 
-    for (int i = 0; i < this->mWindows.size(); i ++)
+    for (int i = 1; i < this->mWindows.size(); i ++)
     {
         werase(this->mWindows[i]);
     }
-    this->renderInformationBoard();
     this->renderGameBoard();
     this->renderInstructionBoard();
-    doupdate();
-    for (int i = 0; i < this->mWindows.size(); i ++)
+    for (int i = 1; i < this->mWindows.size(); i ++)
     {
-        box(this->mWindows[i], 0, 0);
+            box(this->mWindows[i], 0, 0);
+            wnoutrefresh(mWindows[i]);
     }
     this->renderLeaderBoard();
+    doupdate();
 }
 
 
 void Game::adjustDelay()
 {
-    this->mDifficulty = this->mPoints / 5;
+    this->mDifficulty = this->mDifficulty_init + this->mPoints / 5;
     if (mPoints % 5 == 0)
     {
         this->mDelay = this->mBaseDelay * pow(0.75, this->mDifficulty);
     }
-}
-
-void Game::adjustDifficulty(int difficulty)
-{
-    this->mDifficulty = difficulty;
 }
 
 Status Game::runGame()
@@ -470,19 +495,21 @@ Status Game::runGame()
 void Game::startGame() {
     refresh();
     int choice = this->renderMenu(MAIN_MENU);
+    //std::thread menu(this->renderInformationBoard(choice));
     while (true) {
         switch (choice) {
             case NEW_GAME:{
+                this->renderBoards();
                 this->updateLeaderBoard();
                 this->writeLeaderBoard();
                 this->readLeaderBoard();
-                this->renderBoards();
                 this->initializeGame();
                 choice = this->runGame();
                 break;
             }
             case END_OF_THE_GAME: {
                 choice = this->renderMenu(END_OF_THE_GAME);
+                if (choice == ABNORMAL_EXIT) choice = MAIN_MENU;
                 break;
             }
             case MODE: {
@@ -495,11 +522,17 @@ void Game::startGame() {
             }
             case MAIN_MENU: {
                 choice = this->renderMenu(MAIN_MENU);
+                if (choice == ABNORMAL_EXIT) return;
                 continue;
             }
             case PAUSE_GAME:
             {
                 choice = this->renderMenu(RESUME_GAME);
+                if (choice == ABNORMAL_EXIT) choice = RESUME_GAME;
+                continue;
+            }
+            case ABNORMAL_EXIT:{
+                choice = QUIT;
                 break;
             }
             case RESUME_GAME: {
@@ -512,27 +545,40 @@ void Game::startGame() {
         }
     }
 }
-int Game::menuSelect(WINDOW * menu, std::vector<std::string> lists, int axis_y, int axis_x, int line, int init) const
+
+int Game::menuSelect(WINDOW * menu, std::vector<std::string> lists, int axis_y, int axis_x, int whitespace, int init, bool direction)
 {
     int key, size = lists.size(), index = 0, offset = 0;
-    for (;offset < lists.size(); offset++){
-        if (offset != init)
-        {
-            mvwprintw(menu, axis_y + offset * line, axis_x, "%s", lists[offset].c_str());
-        }
-        else
-        {
-            wattron(menu, A_STANDOUT);
-            mvwprintw(menu, axis_y + offset * line, axis_x, "%s", lists[offset].c_str());
-            wattroff(menu, A_STANDOUT);
+    if (direction)
+    {
+        for (; offset < size; offset++) {
+            if (offset != init) {
+                mvwprintw(menu, axis_y + offset * whitespace, axis_x, "%s", lists[offset].c_str());
+            } else {
+                wattron(menu, A_STANDOUT);
+                mvwprintw(menu, axis_y + offset * whitespace, axis_x, "%s", lists[offset].c_str());
+                wattroff(menu, A_STANDOUT);
+            }
         }
     }
+    else
+    {
+        for (; offset < size; offset++) {
+            if (offset != init) {
+                mvwprintw(menu, axis_y, axis_x + offset * whitespace, "%s", lists[offset].c_str());
+            } else {
+                wattron(menu, A_STANDOUT);
+                mvwprintw(menu, axis_y, axis_x + offset * whitespace, "%s", lists[offset].c_str());
+                wattroff(menu, A_STANDOUT);
+            }
+        }
+    }
+    wattron(menu, A_STANDOUT);
+    mvwaddch(menu, 1, getmaxx(menu) - 2, 'x');
+    wattroff(menu, A_STANDOUT);
 
-    for (;offset < lists.size(); offset++){
-        mvwprintw(menu, axis_y + offset, axis_x, "%s", lists[offset].c_str());
-    }
+
     wnoutrefresh(menu);
-
 
     while (true) {
         key = getch();
@@ -540,14 +586,15 @@ int Game::menuSelect(WINDOW * menu, std::vector<std::string> lists, int axis_y, 
             case 'W':
             case 'w':
             case KEY_UP: {
+                if (!direction) break;
                 index--;
                 index = (index < 0) ? size - 1 : index;
                 for (offset = 0; offset < size; ++offset) {
                     if (offset != index) {
-                        mvwprintw(menu, axis_y + offset * line, axis_x, "%s", lists[offset].c_str());
+                        mvwprintw(menu, axis_y + offset * whitespace, axis_x, "%s", lists[offset].c_str());
                     } else {
                         wattron(menu, A_STANDOUT);
-                        mvwprintw(menu, axis_y + offset * line, axis_x, "%s", lists[offset].c_str());
+                        mvwprintw(menu, axis_y + offset * whitespace, axis_x, "%s", lists[offset].c_str());
                         wattroff(menu, A_STANDOUT);
                     }
                 }
@@ -556,19 +603,127 @@ int Game::menuSelect(WINDOW * menu, std::vector<std::string> lists, int axis_y, 
             case 'S':
             case 's':
             case KEY_DOWN: {
+                if(!direction) break;
                 index++;
                 index = (index > size - 1) ? 0 : index;
                 for (offset = 0; offset < size; ++offset) {
                     if (offset != index) {
-                        mvwprintw(menu, axis_y + offset * line, axis_x, "%s", lists[offset].c_str());
+                        mvwprintw(menu, axis_y + offset * whitespace, axis_x, "%s", lists[offset].c_str());
                     } else {
                         wattron(menu, A_STANDOUT);
-                        mvwprintw(menu, axis_y + offset * line, axis_x, "%s", lists[offset].c_str());
+                        mvwprintw(menu, axis_y + offset * whitespace, axis_x, "%s", lists[offset].c_str());
                         wattroff(menu, A_STANDOUT);
                     }
                 }
                 break;
             }
+            case 'A':
+            case 'a':
+            case KEY_LEFT:{
+                if(direction) break;
+                index--;
+                index = (index < 0)? size - 1:index;
+                for (offset = 0; offset < size; ++offset) {
+                    if (offset != index) {
+                        mvwprintw(menu, axis_y, axis_x + offset * whitespace, "%s", lists[offset].c_str());
+                    } else {
+                        wattron(menu, A_STANDOUT);
+                        mvwprintw(menu, axis_y, axis_x + offset * whitespace, "%s", lists[offset].c_str());
+                        wattroff(menu, A_STANDOUT);
+                    }
+                }
+                break;
+            }
+            case 'D':
+            case 'd':
+            case KEY_RIGHT:
+            {
+                if(direction) break;
+                index++;
+                index = (index > size - 1)? 0:index;
+                for (offset = 0; offset < size; ++offset) {
+                    if (offset != index) {
+                        mvwprintw(menu, axis_y, axis_x + offset * whitespace, "%s", lists[offset].c_str());
+                    } else {
+                        wattron(menu, A_STANDOUT);
+                        mvwprintw(menu, axis_y, axis_x + offset * whitespace, "%s", lists[offset].c_str());
+                        wattroff(menu, A_STANDOUT);
+                    }
+                }
+                break;
+            }
+            case KEY_MOUSE:
+            {
+                if (getmouse(&event) == OK)
+                {
+                    int event_y = event.y, event_x = event.x;
+                    if (event.bstate == BUTTON1_CLICKED && wmouse_trafo(menu, &event_y, &event_x, false))
+                    {
+                        if (event_x == (getmaxx(menu) - 2) && event_y == 1)
+                        {
+                            return -1;
+                        }
+                        else if (direction)
+                        {
+                            if ((event_y - axis_y) % whitespace == 0)
+                            {
+                                mvwprintw(menu, axis_y + index * whitespace, axis_x, "%s", lists[index].c_str());
+                                index = (event_y - axis_y) / whitespace;
+                                wattron(menu, A_STANDOUT);
+                                mvwprintw(menu, event_y, axis_x, "%s", lists[index].c_str());
+                                wattroff(menu, A_STANDOUT);
+                                wnoutrefresh(menu);
+                                doupdate();
+                                return index;
+                            }
+                            break;
+                        }
+                        else
+                        {
+                            if((event_x - axis_x) % whitespace == 0)
+                            {
+                                mvwprintw(menu, axis_y, axis_x + index * whitespace, "%s", lists[index].c_str());
+                                index = (event_x - axis_x) / whitespace;
+                                wattron(menu, A_STANDOUT);
+                                mvwprintw(menu, axis_y, event_x, "%s", lists[index].c_str());
+                                wattroff(menu, A_STANDOUT);
+                                wnoutrefresh(menu);
+                                doupdate();
+                                return index;
+                            }
+                        }
+                    }
+                    if (event.bstate == ALL_MOUSE_EVENTS && wmouse_trafo(menu, &event_y, &event_x, false))
+                    {
+                        if (direction)
+                        {
+                            if ((event_y - axis_y) % whitespace == 0)
+                            {
+                                mvwprintw(menu, axis_y + index * whitespace, axis_x, "%s", lists[index].c_str());
+                                index = (event_y - axis_y) / whitespace;
+                                wattron(menu, A_STANDOUT);
+                                mvwprintw(menu, event_y, axis_x, "%s", lists[offset].c_str());
+                                wattroff(menu, A_STANDOUT);
+                                wrefresh(menu);
+                                std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+                            }
+                            break;
+                        }
+                        else
+                        {
+                            if((event_x - axis_x) % whitespace == 0)
+                            {
+                                mvwprintw(menu, axis_y, axis_x + index * whitespace, "%s", lists[index].c_str());
+                                index = (event_x - axis_x) / whitespace;
+                                wattron(menu, A_STANDOUT);
+                                mvwprintw(menu, event_y, axis_x, "%s", lists[index].c_str());
+                                wattroff(menu, A_STANDOUT);
+                            }
+                        }
+                    }
+                }
+            }
+
         }
 
         wnoutrefresh(menu);

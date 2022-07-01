@@ -13,7 +13,7 @@
 #include "snake.h"
 
 //Game Status
-enum Status{END_OF_THE_GAME,NEW_GAME, RESUME_GAME, PAUSE_GAME, MAIN_MENU, QUIT, MODE, SETTINGS};
+enum Status{END_OF_THE_GAME,NEW_GAME, RESUME_GAME, PAUSE_GAME, MAIN_MENU, QUIT, MODE, SETTINGS, ABNORMAL_EXIT};
 
 class Game
 {
@@ -22,7 +22,7 @@ public:
     ~Game();
 
     void createInformationBoard();
-    void renderInformationBoard() const;
+    void renderInformationBoard(int & choice);
 
     void createGameBoard();
     void renderGameBoard() const;
@@ -50,8 +50,10 @@ public:
     bool controlSnake() const;
 
     void startGame();
-    Status renderMenu(Status status) const;
+    //void mainGame();
+    Status renderMenu(Status status);
     void renderSettings();
+    void renderMode() const;
     void adjustDelay();
     void adjustDifficulty(int);
 
@@ -64,7 +66,7 @@ private:
     int mScreenHeight;
     int mGameBoardWidth;
     int mGameBoardHeight;
-    const int mInformationHeight = 6;
+    const int mInformationHeight = 3;
     const int mInstructionWidth = 20;
     std::vector<WINDOW *> mWindows;
     // Snake information
@@ -76,6 +78,7 @@ private:
     const char mFoodSymbol = '#';
     int mPoints = 0;
     int mDifficulty = 0;
+    int mDifficulty_init = 0;
     //Settings
     bool dynamic_difficulty = true;
     bool has_walls = true;
@@ -84,8 +87,10 @@ private:
     const std::string mRecordBoardFilePath = "record.txt";
     std::vector<int> mLeaderBoard;
     const int mNumLeaders = 3;
+    //Mouse
+    MEVENT event;
     //Auxiliary: Menu Select
-    int menuSelect(WINDOW * menu, std::vector<std::string> lists, int axis_y, int axis_x, int line, int init) const;
+    int menuSelect(WINDOW * menu, std::vector<std::string> lists, int axis_y, int axis_x, int whitespace, int init, bool direction = 1) ;
 };
 
 #endif
