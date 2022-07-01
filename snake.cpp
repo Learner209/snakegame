@@ -30,6 +30,16 @@ int SnakeBody::getY() const
     return mY;
 }
 
+void SnakeBody::setX(int mx)
+{
+    mX = mx;
+}
+
+void SnakeBody::setY(int my)
+{
+    mY = my;
+}
+
 bool SnakeBody::operator == (const SnakeBody& snakeBody)
 {
     // TODO overload the == operator for SnakeBody comparision.
@@ -103,20 +113,6 @@ bool Snake::hitSelf()
     return false;
 
 }
-
-
-/*bool Snake::touchFood()
-{
-    SnakeBody newHead = this->createNewHead();
-    if (this->mFood == newHead)
-    {
-        return true;
-    }
-    else
-    {
-        return false;
-    }
-}*/
 
 void Snake::senseFood(SnakeBody food)
 {
@@ -197,11 +193,20 @@ SnakeBody Snake::createNewHead()
 bool Snake::moveFoward()
 {
     /*
-		 * TODO
-		 * move the snake forward.
+    * move the snake forward.
      * If eat food, return true, otherwise return false
      */
     SnakeBody newHead = this->createNewHead();
+
+    //No-wall
+    if (!has_walls)
+    {
+        if (newHead.getY() == 0) newHead.setY(mGameBoardHeight - 2);
+        else if (newHead.getY() == mGameBoardHeight - 1) newHead.setY(1);
+        else if (newHead.getX() == 0) newHead.setX(mGameBoardWidth - 2);
+        else if (newHead.getX() == mGameBoardWidth - 1) newHead.setX(1);
+    }
+
     if (newHead == mFood) {
         this->mSnake.insert(this->mSnake.cbegin(), newHead);
         return true;
@@ -213,7 +218,11 @@ bool Snake::moveFoward()
 
 bool Snake::checkCollision()
 {
-    if (this->hitWall() || this->hitSelf())
+    if (has_walls && (this->hitWall() || this->hitSelf()))
+    {
+        return true;
+    }
+    else if (!has_walls && this->hitSelf())
     {
         return true;
     }
@@ -223,6 +232,9 @@ bool Snake::checkCollision()
     }
 }
 
+void Snake::hasWalls(bool has_walls) {
+    this->has_walls = has_walls;
+}
 
 int Snake::getLength()
 {

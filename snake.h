@@ -22,6 +22,8 @@ public:
     SnakeBody(int x, int y);
     int getX() const;
     int getY() const;
+    void setX(int);
+    void setY(int);
     bool operator == (const SnakeBody& snakeBody);
 private:
     int mX;
@@ -52,6 +54,7 @@ public:
     int getLength();
     SnakeBody createNewHead();
     bool moveFoward();
+    void hasWalls(bool);
 
 private:
     const int mGameBoardWidth;
@@ -61,6 +64,7 @@ private:
     Direction mDirection;
     SnakeBody mFood;
     std::vector<SnakeBody> mSnake;
+    bool has_walls;
 };
 
 #endif
