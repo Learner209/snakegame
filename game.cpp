@@ -61,17 +61,18 @@ void Game::createInformationBoard()
 
 void Game::renderInformationBoard(int & choice)
 {
-    box(this->mWindows[0], 0, 0);
+    box(mWindows[0], 0, 0);
     std::vector<std::string> information = {"Menu", "Mode", "Settings", "Customize", "Help", "Quit"};
-    int whitespace = (mScreenWidth - 3) / information.size();
+    int whitespace = (mScreenWidth - 3) / information.size() ;
     for (int offset = 0; offset < information.size(); offset++)
     {
-        mvwaddch(this->mWindows[0], 0, 1 + (offset + 0.5) * whitespace + information[offset].size() * 0.5, ACS_TTEE);
-        mvwaddch(this->mWindows[0], 1, 1 + (offset + 0.5) * whitespace + information[offset].size() * 0.5, ACS_VLINE);
-        mvwaddch(this->mWindows[0], 2, 1 + (offset + 0.5) * whitespace + information[offset].size() * 0.5, ACS_BTEE);
+        mvwaddch(mWindows[0], 0, offset * whitespace, ACS_TTEE);
+        mvwprintw(mWindows[0], 1, 1 + offset * whitespace, "%s", information[offset].c_str());
+        mvwaddch(mWindows[0], 1,  offset * whitespace,  ACS_VLINE);
+        mvwaddch(mWindows[0], 2, offset * whitespace, ACS_BTEE);
     }
-    choice = menuSelect(this->mWindows[0], information, 1, 1, -1, false);
-    wnoutrefresh(this->mWindows[0]);
+    //choice = menuSelect(mWindows[0], information, 1, 1, -1, false);
+    wnoutrefresh(mWindows[0]);
     doupdate();
 }
 
@@ -495,7 +496,9 @@ Status Game::runGame()
 void Game::startGame() {
     refresh();
     int choice = this->renderMenu(MAIN_MENU);
-    //std::thread menu(this->renderInformationBoard(choice));
+    //std::thread aux_thread(_, choice);
+    this->renderInformationBoard(choice);
+
     while (true) {
         switch (choice) {
             case NEW_GAME:{
@@ -705,7 +708,7 @@ int Game::menuSelect(WINDOW * menu, std::vector<std::string> lists, int axis_y, 
                                 mvwprintw(menu, event_y, axis_x, "%s", lists[offset].c_str());
                                 wattroff(menu, A_STANDOUT);
                                 wrefresh(menu);
-                                std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
                             }
                             break;
                         }

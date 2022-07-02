@@ -11,6 +11,7 @@
 #include <memory>
 
 #include "snake.h"
+#include <iostream>
 
 //Game Status
 enum Status{END_OF_THE_GAME,NEW_GAME, RESUME_GAME, PAUSE_GAME, MAIN_MENU, QUIT, MODE, SETTINGS, ABNORMAL_EXIT};
@@ -57,6 +58,9 @@ public:
     void adjustDelay();
     void adjustDifficulty(int);
 
+    static void _(int a) {
+        std::cout << a << std::endl;
+    }
 
 private:
     // We need to have two windows
