@@ -4,7 +4,7 @@
 
 int main(int argc, char** argv)
     {
-        Game game;
-        game.startGame();
+        Game* game;
+        game->startGame();
     }
 

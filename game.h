@@ -14,7 +14,8 @@
 #include <iostream>
 
 //Game Status
-enum Status{END_OF_THE_GAME,NEW_GAME, RESUME_GAME, PAUSE_GAME, MAIN_MENU, QUIT, MODE, SETTINGS, ABNORMAL_EXIT};
+enum Status{END_OF_THE_GAME,NEW_GAME, RESUME_GAME, PAUSE_GAME,
+        MAIN_MENU, QUIT, MODE, SETTINGS, ABNORMAL_EXIT, NULL_INPUT};
 
 class Game
 {
@@ -23,13 +24,13 @@ public:
     ~Game();
 
     void createInformationBoard();
-    void renderInformationBoard(int & choice);
+    virtual void renderInformationBoard() {return;};
 
-    void createGameBoard();
-    void renderGameBoard() const;
+    virtual void createGameBoard() {return;};
+    virtual void renderGameBoard() const {return;};
 
-    void createInstructionBoard();
-    void renderInstructionBoard() const;
+    virtual void createInstructionBoard() {return;};
+    virtual void renderInstructionBoard() {return;};
 
     void loadLeadBoard();
     void updateLeadBoard();
@@ -43,15 +44,15 @@ public:
     void initializeGame();
     Status runGame();
     void renderPoints() const;
-    void renderDifficulty() const;
+    virtual void renderDifficulty() const {return;};
 
-    void createRandomFood();
-    void renderFood() const;
-    void renderSnake() const;
-    bool controlSnake() const;
+    SnakeBody createRandomFood();
+    virtual void renderFood() const {return;};
+    virtual void renderSnake() const {return;};
+    virtual bool controlSnake() const {return;};
 
     void startGame();
-    //void mainGame();
+
     Status renderMenu(Status status);
     void renderSettings();
     void renderMode() const;
@@ -62,7 +63,7 @@ public:
         std::cout << a << std::endl;
     }
 
-private:
+protected:
     // We need to have two windows
     // One is for game introduction
     // One is for game mWindows
@@ -78,7 +79,7 @@ private:
     const char mSnakeSymbol = '@';
     std::unique_ptr<Snake> mPtrSnake;
     // Food information
-    SnakeBody mFood;
+    //SnakeBody mFood;
     const char mFoodSymbol = '#';
     int mPoints = 0;
     int mDifficulty = 0;
@@ -93,8 +94,68 @@ private:
     const int mNumLeaders = 3;
     //Mouse
     MEVENT event;
+    //Participants
+    bool participants = true;
     //Auxiliary: Menu Select
     int menuSelect(WINDOW * menu, std::vector<std::string> lists, int axis_y, int axis_x, int whitespace, int init, bool direction = 1) ;
 };
 
+class Solo :public Game{
+public:
+    Solo();
+
+    void createGameBoard() const;
+    void renderGameBoard() const;
+
+    void renderInformationBoard() const;
+
+    void createInstructionBoard();
+    void renderInstructionBoard() const;
+    void renderDifficulty() const;
+
+    void renderFood() const;
+    void renderSnake() const;
+
+    bool controlSnake() const;
+protected:
+};
+
+class Double: public Game{
+public:
+    Double();
+
+    void renderInformationBoard();
+
+    void createGameBoard() const;
+    void renderGameBoard() const;
+
+    void renderBoards() const;
+
+    void adjustDelay();
+
+    void renderDifficulty() const;
+
+    void renderFood() const;
+    void renderSnake() const;
+
+    bool controlSnake() const;
+    void initializeGame();
+    Status runGame() const;
+
+protected:
+    std::unique_ptr<Snake> aPtrSnake;
+    std::unique_ptr<Snake> bPtrSnake;
+    int aDifficulty = 0;
+    int aDifficulty_init = 0;
+
+    int bDifficulty = 0;
+    int bDifficulty_init = 0;
+
+    int aPoints = 0;
+    int bPoints = 0;
+
+    int aDelay = 0;
+    int bDelay = 0;
+
+};
 #endif
