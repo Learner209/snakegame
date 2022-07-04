@@ -1,6 +1,7 @@
 //
 // Created by bitch on 6/29/22.
 //
+
 #include <cassert>
 #include "game.h"
 
@@ -18,10 +19,7 @@
 //Multi-thread
 #include <atomic>
 
-
-Game::Game()
-{
-    this->mWindows.resize(3);
+void init(){
     initscr();
     // If there wasn't any key pressed don't wait for keypress
     nodelay(stdscr, true);
@@ -32,13 +30,20 @@ Game::Game()
     // cursor set
     curs_set(0);
     mousemask(BUTTON1_CLICKED | ALL_MOUSE_EVENTS, NULL);
+}
+
+Game::Game()
+{
+    this->mWindows.resize(3);
+    
     // Get screen and board parameters
     getmaxyx(stdscr, this->mScreenHeight, this->mScreenWidth);
     this->mGameBoardHeight = this->mScreenHeight - this->mInformationHeight;
-
+    this->mGameBoardWidth = this->mScreenWidth - this->mInstructionWidth;
     // Initialize the leader board to be all zeros
     this->mLeaderBoard.assign(this->mNumLeaders, 0);
 }
+
 
 Game::~Game()
 {
@@ -49,20 +54,22 @@ Game::~Game()
     endwin();
 }
 
-Solo::Solo()
+
+Solo::Solo():Game()
 {
     this->mGameBoardWidth = this->mScreenWidth - this->mInstructionWidth;
-    this->createInformationBoard();
+    Game::createInformationBoard();
     this->createGameBoard();
     this->createInstructionBoard();
 }
 
-Double::Double()
+Double::Double():Game()
 {
     this->mGameBoardWidth = this->mScreenWidth / 2;
     this->createInformationBoard();
     this->createGameBoard();
 }
+
 
 void Game::createInformationBoard()
 {
@@ -71,6 +78,12 @@ void Game::createInformationBoard()
     this->mWindows[0] = newwin(this->mInformationHeight, this->mScreenWidth, startY, startX);
 }
 
+void Double::createInformationBoard()
+{
+    int startY = 0;
+    int startX = 0;
+    this->mWindows[0] = newwin(this->mInformationHeight, this->mScreenWidth, startY, startX);
+}
 void Solo::renderInformationBoard() const
 {
     /*box(mWindows[0], 0, 0);
@@ -150,13 +163,85 @@ void Game::renderLeaderBoard() const
     wrefresh(this->mWindows[2]);
 }
 
+void Solo::createGameBoard()
+{
+    int startY = this->mInformationHeight;
+    int startX = 0;
+    this->mWindows[1] = newwin(this->mScreenHeight - this->mInformationHeight, this->mScreenWidth - this->mInstructionWidth, startY, startX);
+};
+
+void Double::createGameBoard()
+{
+
+    int startY = this->mInformationHeight;
+    int startX = 0;
+    this->mWindows[1] = newwin(this->mScreenHeight - this->mInformationHeight, this->mScreenWidth / 2, startY, startX);
+    if (mScreenWidth % 2 == 0)
+    {
+        this->mWindows[2] = newwin(this->mScreenHeight - this->mInformationHeight, this->mScreenWidth / 2, startY, this->mScreenWidth / 2);
+    }
+    else
+    {
+        this->mWindows[2] = newwin(this->mScreenHeight - this->mInformationHeight, this->mScreenWidth / 2, startY, this->mScreenWidth / 2 + 1);
+    }
+}
+
+void Solo::renderGameBoard() const
+{
+    wnoutrefresh(mWindows[1]);
+}
+
+void Double::renderGameBoard() const
+{
+    wnoutrefresh(mWindows[1]);
+    wnoutrefresh(mWindows[2]);
+    doupdate();
+}
+
+void Solo::renderBoards()
+{
+
+    for (int i = 0; i < this->mWindows.size(); i ++)
+    {
+        werase(this->mWindows[i]);
+    }
+    this->renderGameBoard();
+    this->renderInstructionBoard();
+    this->renderInformationBoard();
+
+    for (int i = 0; i < this->mWindows.size(); i ++)
+    {
+        box(this->mWindows[i], 0, 0);
+        wnoutrefresh(mWindows[i]);
+    }
+    this->renderLeaderBoard();
+    doupdate();
+}
+
+void Double::renderBoards()
+{
+    for (int i = 0; i < this->mWindows.size(); i ++)
+    {
+        werase(this->mWindows[i]);
+    }
+    this->renderGameBoard();
+    for (int i = 0; i < this->mWindows.size(); i ++)
+    {
+        box(this->mWindows[i], 0, 0);
+        wnoutrefresh(mWindows[i]);
+    }
+    doupdate();
+
+}
+
 Status Game::renderMenu(Status status)
 {
     WINDOW * menu;
     float width, height, startX, startY;
     if (status != MAIN_MENU) {
-        width = this->mGameBoardWidth * 0.5;
-        height = this->mGameBoardHeight * 0.5;
+        assert(mGameBoardWidth != 62);
+        width = mGameBoardWidth * 0.5;
+        height = mGameBoardHeight * 0.5;
         startX = this->mGameBoardWidth * 0.25;
         startY = this->mGameBoardHeight * 0.25 + this->mInformationHeight;
     }
@@ -169,6 +254,7 @@ Status Game::renderMenu(Status status)
 
     menu = newwin(height, width, startY, startX);
     box(menu, 0, 0);
+
     std::vector<std::string> menuItems = {"New Game", "Quit"};
     int index = 0, axis_x, axis_y, offset = 1;
 
@@ -188,6 +274,7 @@ Status Game::renderMenu(Status status)
             werase(mWindows[i]);
             wnoutrefresh(mWindows[i]);
         }
+
         doupdate();
         mvwprintw(menu, height * (1 - 0.8), (width - 24) / 2, "Welcome to the Snake Game!");
         menuItems.insert(menuItems.begin() + 1, "Mode");
@@ -207,7 +294,10 @@ Status Game::renderMenu(Status status)
     }
 
     int size = menuItems.size();
+
     index = this->menuSelect(menu, menuItems, axis_y, axis_x, 1, 0);
+
+
     delwin(menu);
 
     if (status == RESUME_GAME)
@@ -235,8 +325,6 @@ Status Game::renderMenu(Status status)
 
 void Game::renderSettings()
 {
-
-    const int size_of_settings = 3;
     float startX = this->mScreenWidth * (1 - 0.618) / 2;
     float startY = this->mScreenHeight * (1 - 0.618) / 2;
     WINDOW * setting = newwin(this->mScreenHeight * 0.618, this->mScreenWidth * 0.618, startY, startX);
@@ -256,8 +344,6 @@ void Game::renderSettings()
 
         int index = this->menuSelect(setting, settings, startY, startX, 2, 0);
 
-
-        int width = 6, height = 4;
         int choice;
         std::vector <std::string> tmp = {"On", "Off"};
 
@@ -268,47 +354,47 @@ void Game::renderSettings()
             return;
         }
         else if (index == 0) {
-            WINDOW * setwin = newwin(3, mScreenWidth - 2, 0, 1);
-            box(setwin, 0, 0);
+            WINDOW * setWin = newwin(3, mScreenWidth - 2, 0, 1);
+            box(setWin, 0, 0);
             int whitespace = (mScreenWidth - 2) / 10;
             tmp = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"};
-            choice = this->menuSelect(setwin, tmp, 1, 1, whitespace, 0, false);
+            choice = this->menuSelect(setWin, tmp, 1, 1, whitespace, 0, false);
             if (choice >= 0)
             {
                 this->mDifficulty_init = choice;
                 adjustDelay();
             }
-            werase(setwin);
-            wrefresh(setwin);
-            delwin(setwin);
+            werase(setWin);
+            wrefresh(setWin);
+            delwin(setWin);
         }
         else if (index == 1)
         {
-            WINDOW *setwin = newwin(height, width, 1, 1);
-            box(setwin, 0, 0);
+            WINDOW *setWin = newwin(7, 10, (mScreenHeight - 7) / 2, (mScreenWidth - 10) / 2);
+            box(setWin, 0, 0);
             if (this->dynamic_difficulty) {
-                choice = this->menuSelect(setwin, tmp, 1, 1, 1, 0);
+                choice = this->menuSelect(setWin, tmp, 2, 3, 2, 0);
             } else {
-                choice = this->menuSelect(setwin, tmp, 1, 1, 1, 1);
+                choice = this->menuSelect(setWin, tmp, 2, 3, 2, 1);
             }
-            werase(setwin);
-            wrefresh(setwin);
-            delwin(setwin);
+            werase(setWin);
+            wrefresh(setWin);
+            delwin(setWin);
             if (choice) this->dynamic_difficulty = false;
             else this->dynamic_difficulty = true;
         }
         else if (index == 2)
         {
-            WINDOW *setwin = newwin(height, width, 1, 1);
-            box(setwin, 0, 0);
+            WINDOW *setWin = newwin(7, 10, (mScreenHeight - 7) / 2, (mScreenWidth - 10) / 2);
+            box(setWin, 0, 0);
             if (this->has_walls) {
-                choice = this->menuSelect(setwin, tmp, 1, 1, 1, 0);
+                choice = this->menuSelect(setWin, tmp, 2, 3, 2, 0);
             } else {
-                choice = this->menuSelect(setwin, tmp, 1, 1, 1, 1);
+                choice = this->menuSelect(setWin, tmp, 2, 3, 2, 1);
             }
-            werase(setwin);
-            wrefresh(setwin);
-            delwin(setwin);
+            werase(setWin);
+            wrefresh(setWin);
+            delwin(setWin);
             if (choice) this->has_walls = false;
             else this->has_walls = true;
         }
@@ -320,51 +406,78 @@ void Game::renderSettings()
 
 }
 
-void Game::renderMode() const
+void Game::renderMode()
 {
-    std::vector<std::string> modes = {"Terrains", "Participants"};
+    int choice = 0;
+
+    std::vector<std::string> modes = {"Terrains:", "Participants:"};
     float startX = this->mScreenWidth * (1 - 0.618) / 2;
     float startY = this->mScreenHeight * (1 - 0.618) / 2;
     WINDOW * mode = newwin(this->mScreenHeight * 0.618, this->mScreenWidth * 0.618, startY, startX);
+
     box(mode, 0, 0);
 
     int axis_x = (this->mScreenWidth * 0.618 - 11) / 2;
-    int axis_y = (this->mScreenHeight * 0.618 - modes.size()) / 2;
+    int axis_y = (this->mScreenHeight * 0.618 - 4) / 2;
 
-    int choice = menuSelect(mode, modes, axis_y, axis_x, 1, 0);
-    if (choice == 0)
-    {
-        break;
-    }
-    else if (choice == 1)
-    {
-        int height = 4, width = 10;
-        WINDOW *modewin = newwin(height, width, 1, 1);
-        box(modewin, 0, 0);
-        std::vector<std::string> participants = {"SOLO", "DOUBLE"};
-        if (this->participants) {
-            choice = this->menuSelect(modewin, participants, mScreenHeight/ 2, mScreenWidth / 2, 1, 0);
-        } else {
-            choice = this->menuSelect(modewin, participants, mScreenHeight / 2, mScreenWidth / 2, 1, 1);
+    while(true) {
+
+        std::string terrain = Terrains[indexTerrain];
+        mvwprintw(mode, axis_y + 1, axis_x, "%s", terrain.c_str());
+        std::string participants = (this->participants) ? "SOLO" : "DOUBLE";
+        mvwprintw(mode, axis_y + 3, axis_x, "%s", participants.c_str());
+        wnoutrefresh(mode);
+
+        choice = this->menuSelect(mode, modes, axis_y, axis_x, 2, 0);
+
+        if (choice == -1){
+            werase(mode);
+            wrefresh(mode);
+            delwin(mode);
+            return;
         }
-        werase(modewin);
-        wrefresh(modewin);
-        delwin(modewin);
-        if (choice) this->participants = false;
-        else this->participants = true;
-    }
+        if (choice == 0)
+        {
+            break;
+        }
+        else if (choice == 1)
+        {
+            int height = (mScreenHeight - 5) / 2, width = (mScreenWidth - 20) / 2;
+            WINDOW *modeWin = newwin(5, 20, height, width);
+            box(modeWin, 0, 0);
+            std::vector<std::string> participants = {"SOLO", "DOUBLE"};
+            if (this->participants) {
+                choice = this->menuSelect(modeWin, participants, 2, 2, 8, 0, false);
+            } else {
+                choice = this->menuSelect(modeWin, participants, 2, 2, 8, 1, false);
+            }
+            werase(modeWin);
+            wrefresh(modeWin);
+            delwin(modeWin);
 
+            if (choice) this->participants = false;
+            else this->participants = true;
+        }
+
+    }
     werase(mode);
     wrefresh(mode);
     delwin(mode);
-
-
 }
-void Game::renderPoints() const
+void Solo::renderPoints() const
 {
-    std::string pointString = std::to_string(this->mPoints);
-    mvwprintw(this->mWindows[2], 12, 1, "%s", pointString.c_str());
+    std::string pointsString = std::to_string(this->mPoints);
+    mvwprintw(this->mWindows[2], 12, 1, "%s", pointsString.c_str());
     wrefresh(this->mWindows[2]);
+}
+
+void Double::renderPoints() const 
+{
+    std::string aPointsString = std::to_string(this->aPoints);
+    std::string bPointsString = std::to_string(this->bPoints);
+    mvwprintw(this->mWindows[0], 2, mScreenWidth / 2 - 3, "%s", aPointsString.c_str());
+    mvwprintw(this->mWindows[0], 2, mScreenWidth / 2 + 1, "%s", bPointsString.c_str());
+    wrefresh(this->mWindows[0]);
 }
 
 void Solo::renderDifficulty() const
@@ -384,52 +497,12 @@ void Double::renderDifficulty() const
     mvwprintw(this->mWindows[0], 1, mScreenWidth - 2, "%s", bDifficultyString.c_str());
 }
 
-void Game::initializeGame()
-{
-    // allocate memory for a new snake
-    this->mPtrSnake.reset(new Snake(this->mGameBoardWidth, this->mGameBoardHeight, this->mInitialSnakeLength));
 
-    // TODO
-    //1.initialize the game points as zero
-    this->mPoints = 0;
-    //2. create a food at random place
-    //3.make the snake aware of the food
-    this->mPtrSnake->senseFood(this->createRandomFood());
-    //4.Adjust delay
-    this->adjustDelay();
-    //5.initialize the difficulty
-    this->renderDifficulty();
-    //6.Check if it has walls
-    this->mPtrSnake->hasWalls(this->has_walls);
-}
-
-void Double::initializeGame()
-{
-    // allocate memory for a new snake
-    this->aPtrSnake.reset(new Snake(this->mGameBoardWidth, this->mGameBoardHeight, this->mInitialSnakeLength));
-    this->bPtrSnake.reset(new Snake(this->mGameBoardWidth, this->mGameBoardHeight, this->mInitialSnakeLength));
-
-    //1.initialize the game points as zero
-    this->aPoints = 0;
-    this->bPoints = 0;
-    //2. create a food at random place
-    //3.make the snake aware of the food
-    this->aPtrSnake->senseFood(this->createRandomFood());
-    this->bPtrSnake->senseFood(this->createRandomFood());
-    //4.Adjust delay
-    this->adjustDelay();
-    //5.initialize the difficulty
-    this->renderDifficulty();
-    //6.Check if it has walls
-    this->aPtrSnake->hasWalls(this->has_walls);
-    this->bPtrSnake->hasWalls(this->has_walls);
-}
 SnakeBody Game::createRandomFood()
 {
-    /* TODO
-    * create a food at random places
-    * make sure that the food doesn't overlap with the snake.
-    */
+
+    // create a food at random places
+    // make sure that the food doesn't overlap with the snake.
     int width, height;
     do{
         width = rand() % (this->mGameBoardWidth - 2) + 1;
@@ -439,19 +512,31 @@ SnakeBody Game::createRandomFood()
     return food;
 }
 
+SnakeBody Double::createRandomFood()
+{
 
+    // create a food at random places
+    // make sure that the food doesn't overlap with the snake.
+    int width, height;
+    do{
+        width = rand() % (this->mGameBoardWidth - 2) + 1;
+        height = rand() % (this->mGameBoardHeight - 2) + 1;
+    }while(aPtrSnake->isPartOfSnake(width, height));
+    SnakeBody food(width, height);
+    return food;
+}
 
 void Solo::renderFood() const
 {
-    mvwaddch(this->mWindows[1], this->mPtrSnake->mFood->getY(), this->mPtrSnake->mFood->getY(), ACS_DIAMOND);
+    mvwaddch(this->mWindows[1], this->mFood.getY(), this->mFood.getX(), ACS_DIAMOND);
     wnoutrefresh(this->mWindows[1]);
 }
 
 void Double::renderFood() const
 {
-    mvwaddch(this->mWindows[1], this->aPtrSnake->mFood->getY(), this->aPtrSnake->mFood->getY(), ACS_DIAMOND);
+    mvwaddch(this->mWindows[1], this->aFood.getY(), this->aFood.getX(), ACS_DIAMOND);
     wnoutrefresh(this->mWindows[1]);
-    mvwaddch(this->mWindows[2],this->bPtrSnake->mFood->getY(), this->bPtrSnake->mFood->getY(), ACS_DIAMOND);
+    mvwaddch(this->mWindows[2],this->bFood.getY(), this->bFood.getX(), ACS_DIAMOND);
     wnoutrefresh(this->mWindows[2]);
 
 }
@@ -481,7 +566,7 @@ void Double::renderSnake() const
     std::vector<SnakeBody>& bSnake = this->bPtrSnake->getSnake();
     for (int i = 0; i < bSnakeLength; i ++)
     {
-        mvwaddch(this->mWindows[1], bSnake[i].getY(), bSnake[i].getX(), mSnakeSymbol);
+        mvwaddch(this->mWindows[2], bSnake[i].getY(), bSnake[i].getX(), mSnakeSymbol);
     }
     wnoutrefresh(this->mWindows[2]);
 }
@@ -602,39 +687,6 @@ bool Double::controlSnake() const
 
     }
 }
-void Game::renderBoards() const
-{
-
-    for (int i = 1; i < this->mWindows.size(); i ++)
-    {
-        werase(this->mWindows[i]);
-    }
-    this->renderGameBoard();
-    this->renderInstructionBoard();
-    for (int i = 1; i < this->mWindows.size(); i ++)
-    {
-            box(this->mWindows[i], 0, 0);
-            wnoutrefresh(mWindows[i]);
-    }
-    this->renderLeaderBoard();
-    doupdate();
-}
-
-void Double::RenderBoards() const
-{
-    for (int i = 1; i < this->mWindows.size(); i ++)
-    {
-        werase(this->mWindows[i]);
-    }
-    this->renderGameBoard();
-    for (int i = 1; i < this->mWindows.size(); i ++)
-    {
-        box(this->mWindows[i], 0, 0);
-        wnoutrefresh(mWindows[i]);
-    }
-    this->renderLeaderBoard();
-    doupdate();
-}
 
 void Game::adjustDelay()
 {
@@ -659,7 +711,52 @@ void Double::adjustDelay()
     }
 }
 
-Status Game::runGame()
+
+void Solo::initializeGame()
+{
+    // allocate memory for a new snake
+    this->mPtrSnake.reset(new Snake(this->mGameBoardWidth, this->mGameBoardHeight, this->mInitialSnakeLength));
+
+    // TODO
+    //1.initialize the game points as zero
+    this->mPoints = 0;
+    //2. create a food at random place
+    //3.make the snake aware of the food
+    this->mFood = this->createRandomFood();
+    this->mPtrSnake->senseFood(this->mFood);
+    //4.Adjust delay
+    this->adjustDelay();
+    //5.initialize the difficulty
+    this->renderDifficulty();
+    //6.Check if it has walls
+    this->mPtrSnake->hasWalls(this->has_walls);
+}
+
+void Double::initializeGame()
+{
+    // allocate memory for a new snake
+    this->aPtrSnake.reset(new Snake(this->mGameBoardWidth, this->mGameBoardHeight, this->mInitialSnakeLength));
+    this->bPtrSnake.reset(new Snake(this->mGameBoardWidth, this->mGameBoardHeight, this->mInitialSnakeLength));
+
+    //1.initialize the game points as zero
+    this->aPoints = 0;
+    this->bPoints = 0;
+    //2. create a food at random place
+    //3.make the snake aware of the food
+    this->aFood = this->createRandomFood();
+    this->bFood = this->createRandomFood();
+    this->aPtrSnake->senseFood(this->aFood);
+    this->bPtrSnake->senseFood(this->bFood);
+    //4.Adjust delay
+    this->adjustDelay();
+    //5.initialize the difficulty
+    this->renderDifficulty();
+    //6.Check if it has walls
+    this->aPtrSnake->hasWalls(this->has_walls);
+    this->bPtrSnake->hasWalls(this->has_walls);
+}
+
+Status Solo::runGame()
 {
     bool moveSuccess;
     int key = 0;
@@ -696,69 +793,116 @@ Status Game::runGame()
     }
 }
 
+Status Double::runGame()
+{
+    bool aMoveSuccess, bMoveSuccess;
+    int key = 0;
+    while (true)
+    {
+        // 1. process your keyboard input
+        if (!this->controlSnake()) return PAUSE_GAME;
+        // 2. clear the window
+        werase(mWindows[1]);
+        werase(mWindows[2]);
+        box(mWindows[1], 0, 0);
+        box(mWindows[2], 0, 0);
+        // 3. move the current snake forward
+        aMoveSuccess = false;
+        bMoveSuccess = false;
+        if (this->aPtrSnake->moveFoward()) aMoveSuccess = true;
+        if (this->bPtrSnake->moveFoward()) bMoveSuccess = true;
+        // 4. check if the snake has eaten the food after movement
+        // 5. check if the snake dies after the movement
+        if (this->aPtrSnake->checkCollision()) return END_OF_THE_GAME;
+        if (this->bPtrSnake->checkCollision()) return END_OF_THE_GAME;
+        // 6. make corresponding steps for the ``if conditions'' in 3 and 4.
+        if (aMoveSuccess){
+            this->aFood = this->createRandomFood();
+            this->aPtrSnake->senseFood(this->aFood);
+        }
+        if (bMoveSuccess){
+            this->bFood = this->createRandomFood();
+            this->bPtrSnake->senseFood(this->bFood);
+        }
+        // 7. render the position of the food and snake in the new frame of window.
+        this->renderFood();
+        this->renderSnake();
+        doupdate();
+        // 8. update other game states and refresh the window
+        this->renderPoints();
+        this->renderDifficulty();
+        if (aMoveSuccess) this->aPoints++;
+        if (bMoveSuccess) this->bPoints++;
+        // refresh();
+        std::this_thread::sleep_for(std::chrono::milliseconds(this->mDelay));
+        if (dynamic_difficulty) this->adjustDelay();
+
+    }
+}
 
 void Game::startGame() {
 
     refresh();
     int choice = this->renderMenu(MAIN_MENU);
-    switch (choice) {
-        case NEW_GAME:{
-            if (this->participants)
-            {
-                Solo* solo;
-                solo->runGame();
+
+    Game* play = new Solo;
+
+    while(true) {
+        switch (choice) {
+            case NEW_GAME: {
+                if (play != nullptr) delete play;
+                if (participants)  play = new Solo;
+                else play = new Double;
+                play->renderBoards();
+                if (participants) {
+                    play->updateLeaderBoard();
+                    play->writeLeaderBoard();
+                    play->readLeaderBoard();
+                }
+                play->initializeGame();
+                choice = play->runGame();
+                break;
             }
-            else
-            {
-                Double* battle;
-                battle->runGame();
+            case END_OF_THE_GAME: {
+                choice = play->renderMenu(END_OF_THE_GAME);
+                delete play;
+                if (choice == ABNORMAL_EXIT) choice = MAIN_MENU;
+                break;
             }
-            this->renderBoards();
-            this->updateLeaderBoard();
-            this->writeLeaderBoard();
-            this->readLeaderBoard();
-            this->initializeGame();
-            choice = this->runGame();
-            break;
+            case MODE: {
+                this->renderMode();
+                choice = MAIN_MENU;
+                break;
+            }
+            case SETTINGS: {
+                this->renderSettings();
+                choice = MAIN_MENU;
+                break;
+            }
+            case MAIN_MENU: {
+                choice = play->renderMenu(MAIN_MENU);
+                if (choice == ABNORMAL_EXIT) choice = QUIT;
+                continue;
+            }
+            case PAUSE_GAME: {
+                choice = play->renderMenu(RESUME_GAME);
+                if (choice == ABNORMAL_EXIT) choice = RESUME_GAME;
+                continue;
+            }
+            case ABNORMAL_EXIT: {
+                choice = QUIT;
+                break;
+            }
+            case RESUME_GAME: {
+                choice = play->runGame();
+                continue;
+            }
+            case QUIT: {
+                return;
+            }
         }
-        case END_OF_THE_GAME: {
-            choice = this->renderMenu(END_OF_THE_GAME);
-            if (choice == ABNORMAL_EXIT) choice = MAIN_MENU;
-            break;
-        }
-        case MODE: {
-            break;
-        }
-        case SETTINGS: {
-            this->renderSettings();
-            choice = MAIN_MENU;
-            break;
-        }
-        case MAIN_MENU: {
-            choice = this->renderMenu(MAIN_MENU);
-            if (choice == ABNORMAL_EXIT) choice = QUIT;
-            continue;
-        }
-        case PAUSE_GAME:
-        {
-            choice = this->renderMenu(RESUME_GAME);
-            if (choice == ABNORMAL_EXIT) choice = RESUME_GAME;
-            continue;
-        }
-        case ABNORMAL_EXIT:{
-            choice = QUIT;
-            break;
-        }
-        case RESUME_GAME: {
-            choice = this->runGame();
-            continue;
-        }
-        case QUIT: {
-            return;
-        }
+
     }
-
-
 
 }
 
@@ -795,6 +939,8 @@ int Game::menuSelect(WINDOW * menu, std::vector<std::string> lists, int axis_y, 
 
 
     wnoutrefresh(menu);
+    doupdate();
+
 
     while (true) {
         key = getch();
@@ -870,6 +1016,7 @@ int Game::menuSelect(WINDOW * menu, std::vector<std::string> lists, int axis_y, 
             case KEY_MOUSE: {
                 if (getmouse(&event) == OK) {
                     int event_y = event.y, event_x = event.x;
+
                     if (event.bstate == BUTTON1_CLICKED && wmouse_trafo(menu, &event_y, &event_x, false)) {
                         if (event_x == (getmaxx(menu) - 2) && event_y == 1) {
                             return -1;
@@ -886,7 +1033,7 @@ int Game::menuSelect(WINDOW * menu, std::vector<std::string> lists, int axis_y, 
                             }
                             break;
                         } else {
-                            if ((event_x - axis_x) % whitespace == 0) {
+                            if ((event_x - axis_x) < size * whitespace && (event_x - axis_x) > 0) {
                                 mvwprintw(menu, axis_y, axis_x + index * whitespace, "%s", lists[index].c_str());
                                 index = (event_x - axis_x) / whitespace;
                                 wattron(menu, A_STANDOUT);
@@ -938,6 +1085,7 @@ int Game::menuSelect(WINDOW * menu, std::vector<std::string> lists, int axis_y, 
         } else if (key == KEY_BACKSPACE || key == 27 || key == ' ') {
             return -1;
         }
+
     }
     return index;
 }
@@ -998,29 +1146,5 @@ bool Game::writeLeaderBoard()
     return true;
 }
 
-void Solo::createGameBoard() const
-{
-    int startY = this->mInformationHeight;
-    int startX = 0;
-    this->mWindows[1] = newwin(this->mScreenHeight - this->mInformationHeight, this->mScreenWidth - this->mInstructionWidth, startY, startX);
-};
 
-void Double::createGameBoard() const
-{
-    int startY = this->mInformationHeight;
-    int startX = 0;
-    this->mWindows[1] = newwin(this->mScreenHeight - this->mInformationHeight, this->mScreenWidth / 2, startY, startX);
-    this->mWindows[2] = newwin(this->mScreenHeight - this->mInformationHeight, this->mScreenWidth / 2, startY, startX);
-}
-
-void Solo::renderGameBoard() const
-{
-    wnoutrefresh(mWindows[1]);
-}
-
-void Double::renderGameBoard() const
-{
-    wnoutrefresh(mWindows[1]);
-    wnoutrefresh(mWindows[2]);
-}
 
