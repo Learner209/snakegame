@@ -19,6 +19,12 @@
 //Multi-thread
 #include <atomic>
 
+
+bool Game::participants = true;
+bool Game::dynamic_difficulty = true;
+bool Game::has_walls = false;
+int Double::Difficulty = 0;
+
 void init(){
     initscr();
     // If there wasn't any key pressed don't wait for keypress
@@ -65,6 +71,7 @@ Solo::Solo():Game()
 
 Double::Double():Game()
 {
+    this->mGameBoardHeight = this->mScreenHeight - this->mInformationHeight;
     this->mGameBoardWidth = this->mScreenWidth / 2;
     this->createInformationBoard();
     this->createGameBoard();
@@ -239,7 +246,6 @@ Status Game::renderMenu(Status status)
     WINDOW * menu;
     float width, height, startX, startY;
     if (status != MAIN_MENU) {
-        assert(mGameBoardWidth != 62);
         width = mGameBoardWidth * 0.5;
         height = mGameBoardHeight * 0.5;
         startX = this->mGameBoardWidth * 0.25;
@@ -323,6 +329,86 @@ Status Game::renderMenu(Status status)
     return ABNORMAL_EXIT;
 }
 
+Status Double::renderMenu(Status status)
+{
+    WINDOW * menu;
+    float width, height, startX, startY;
+    width = this->mScreenWidth * 0.618;
+    height = this->mScreenHeight * 0.618;
+    startX = this->mScreenWidth * (1 - 0.618) / 2;
+    startY = this->mScreenHeight * (1 - 0.618) / 2;
+
+    menu = newwin(height, width, startY, startX);
+    box(menu, 0, 0);
+
+    std::vector<std::string> menuItems = {"New Game", "Quit"};
+    int index = 0, axis_x, axis_y, offset = 1;
+
+    if (status == RESUME_GAME)
+    {
+        menuItems.insert(menuItems.begin() + 1, "Resume");
+        menuItems.insert(menuItems.begin() + 2, "Main Menu");
+        menuItems.insert(menuItems.begin() + 3, "Mode");
+        menuItems.insert(menuItems.begin() + 4, "Settings");
+        axis_x = (width - 8) / 2;
+        axis_y = (height - 6) / 2;
+    }
+
+    if (status == MAIN_MENU)
+    {
+        for (int i = 0; i < mWindows.size(); i++){
+            werase(mWindows[i]);
+            wnoutrefresh(mWindows[i]);
+        }
+
+        doupdate();
+        mvwprintw(menu, height * (1 - 0.8), (width - 24) / 2, "Welcome to the Snake Game!");
+        menuItems.insert(menuItems.begin() + 1, "Mode");
+        menuItems.insert(menuItems.begin() + 2, "Settings");
+        axis_x = (width - 8) / 2;
+        axis_y = (height - 4) / 2;
+    }
+
+    if (status == END_OF_THE_GAME)
+    {
+        axis_y = (height - 6) / 2 + 3;
+        axis_x = (width - 16) / 2;
+        menuItems.insert(menuItems.begin() + 1, "Main Menu");
+        mvwprintw(menu, axis_y - 3, axis_x, "Your Final Score:");
+        std::string pointString = std::to_string(this->mPoints);
+        mvwprintw(menu, axis_y - 2, axis_x, "%s", pointString.c_str());
+    }
+
+    int size = menuItems.size();
+
+    index = this->menuSelect(menu, menuItems, axis_y, axis_x, 1, 0);
+
+    delwin(menu);
+
+    if (status == RESUME_GAME)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    }
+
+    if (-1 < index && index < size && menuItems[index] == "New Game") {
+        return NEW_GAME;
+    } else if (-1 < index && index < size && menuItems[index] == "Resume") {
+        return RESUME_GAME;
+    } else if (index == -1){
+        return ABNORMAL_EXIT;
+    } else if (-1 < index && index < size && menuItems[index] == "Quit") {
+        return QUIT;
+    } else if (-1 < index && index < size && menuItems[index] == "Main Menu") {
+        return MAIN_MENU;
+    } else if (-1 < index && index < size && menuItems[index] == "Settings"){
+        return SETTINGS;
+    } else if (-1 < index && index < size && menuItems[index] == "Mode"){
+        return MODE;
+    }
+    return ABNORMAL_EXIT;
+}
+
+
 void Game::renderSettings()
 {
     float startX = this->mScreenWidth * (1 - 0.618) / 2;
@@ -336,9 +422,9 @@ void Game::renderSettings()
 
         std::string difficulty = std::to_string(this->mDifficulty);
         mvwprintw(setting, startY + 1, startX, "%s", difficulty.c_str());
-        std::string dynamic = (this->dynamic_difficulty) ? "On" : "Off";
+        std::string dynamic = (Game::dynamic_difficulty) ? "On" : "Off";
         mvwprintw(setting, startY + 3, startX, "%s", dynamic.c_str());
-        std::string has_walls = (this->has_walls) ? "On" : "Off";
+        std::string has_walls = (Game::has_walls) ? "On" : "Off";
         mvwprintw(setting, startY + 5, startX, "%s", has_walls.c_str());
         wnoutrefresh(setting);
 
@@ -372,7 +458,7 @@ void Game::renderSettings()
         {
             WINDOW *setWin = newwin(7, 10, (mScreenHeight - 7) / 2, (mScreenWidth - 10) / 2);
             box(setWin, 0, 0);
-            if (this->dynamic_difficulty) {
+            if (Game::dynamic_difficulty) {
                 choice = this->menuSelect(setWin, tmp, 2, 3, 2, 0);
             } else {
                 choice = this->menuSelect(setWin, tmp, 2, 3, 2, 1);
@@ -380,14 +466,14 @@ void Game::renderSettings()
             werase(setWin);
             wrefresh(setWin);
             delwin(setWin);
-            if (choice) this->dynamic_difficulty = false;
-            else this->dynamic_difficulty = true;
+            if (choice) Game::dynamic_difficulty = false;
+            else Game::dynamic_difficulty = true;
         }
         else if (index == 2)
         {
             WINDOW *setWin = newwin(7, 10, (mScreenHeight - 7) / 2, (mScreenWidth - 10) / 2);
             box(setWin, 0, 0);
-            if (this->has_walls) {
+            if (Game::has_walls) {
                 choice = this->menuSelect(setWin, tmp, 2, 3, 2, 0);
             } else {
                 choice = this->menuSelect(setWin, tmp, 2, 3, 2, 1);
@@ -395,8 +481,100 @@ void Game::renderSettings()
             werase(setWin);
             wrefresh(setWin);
             delwin(setWin);
-            if (choice) this->has_walls = false;
-            else this->has_walls = true;
+            if (choice) Game::has_walls = false;
+            else Game::has_walls = true;
+        }
+        werase(setting);
+        box(setting, 0, 0);
+        wrefresh(setting);
+    }
+
+
+}
+
+void Double::renderSettings()
+{
+    float startX = this->mScreenWidth * (1 - 0.618) / 2;
+    float startY = this->mScreenHeight * (1 - 0.618) / 2;
+    WINDOW * setting = newwin(this->mScreenHeight * 0.618, this->mScreenWidth * 0.618, startY, startX);
+    box(setting, 0, 0);
+
+    float axis_y = (this->mScreenHeight * 0.618 - 6) / 2;
+    float axis_x = (this->mScreenWidth * 0.618 - 12) / 2;
+    std:std::vector<std::string> settings = {"Difficulty:", "Countdown", "Has walls:"};
+
+    while(true) {
+
+        std::string mDifficulty = std::to_string(Double::Difficulty);
+        mvwprintw(setting, axis_y + 1, axis_x, "%s", mDifficulty.c_str());
+        std::string countdown = std::to_string(mCountdown / 60) + ": ";
+        countdown += ((this->mCountdown - this->mCountdown / 60 * 60) < 10) ? "0" + std::to_string(this->mCountdown - this->mCountdown / 60 * 60):
+                     std::to_string(this->mCountdown - this->mCountdown / 60 * 60);
+        std::string has_walls = (Game::has_walls) ? "ON" : "OFF";
+        mvwprintw(setting, axis_y + 3, axis_x, "%s", countdown.c_str());
+        mvwprintw(setting, axis_y + 5, axis_x, "%s", has_walls.c_str());
+        wnoutrefresh(setting);
+
+        int index = this->menuSelect(setting, settings, axis_y, axis_x, 2, 0);
+
+        int choice;
+        std::vector <std::string> tmp = {"On", "Off"};
+
+        if (index == -1)
+        {
+            werase(setting);
+            wrefresh(setting);
+            delwin(setting);
+            return;
+        }
+        else if (index == 0)
+        {
+            WINDOW * setWin = newwin(3, mScreenWidth - 2, 0, 1);
+            box(setWin, 0, 0);
+            int whitespace = (mScreenWidth - 2) / 10;
+            tmp = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"};
+            choice = this->menuSelect(setWin, tmp, 1, 1, whitespace, 0, false);
+            if (choice >= 0)
+            {
+                Double::Difficulty = choice;
+            }
+            werase(setWin);
+            wrefresh(setWin);
+            delwin(setWin);
+        }
+        else if (index == 1)
+        {
+
+            WINDOW * countdownWin = newwin(5, 10, (mScreenHeight - 5) / 2, (mScreenWidth - 8) / 2);
+            box(countdownWin, 0, 0);
+
+            int minutes = this->mCountdown / 60, tenths = (this->mCountdown - this->mCountdown / 60) / 10;
+            int digit = this->mCountdown - 60 * minutes - 10 * tenths;
+            std::vector<int> original = {minutes, tenths, digit};
+            std::vector<int> positions = {3, 5, 6};
+
+            this->numSelect(countdownWin, original, positions, 2, 0);
+            this->mCountdown = original[0] * 60 + original[1] * 10 + original[2];
+
+            werase(countdownWin);
+            wrefresh(countdownWin);
+            delwin(countdownWin);
+            break;
+        }
+        else if (index == 2)
+        {
+            WINDOW *setWin = newwin(7, 10, (mScreenHeight - 7) / 2, (mScreenWidth - 10) / 2);
+            box(setWin, 0, 0);
+            if (Game::has_walls) {
+                choice = this->menuSelect(setWin, tmp, 2, 3, 2, 0);
+            } else {
+                choice = this->menuSelect(setWin, tmp, 2, 3, 2, 1);
+            }
+            werase(setWin);
+            wrefresh(setWin);
+            delwin(setWin);
+            if (choice) Game::has_walls = false;
+            else Game::has_walls = true;
         }
         werase(setting);
         box(setting, 0, 0);
@@ -424,7 +602,7 @@ void Game::renderMode()
 
         std::string terrain = Terrains[indexTerrain];
         mvwprintw(mode, axis_y + 1, axis_x, "%s", terrain.c_str());
-        std::string participants = (this->participants) ? "SOLO" : "DOUBLE";
+        std::string participants = (Game::participants) ? "SOLO" : "DOUBLE";
         mvwprintw(mode, axis_y + 3, axis_x, "%s", participants.c_str());
         wnoutrefresh(mode);
 
@@ -455,8 +633,8 @@ void Game::renderMode()
             wrefresh(modeWin);
             delwin(modeWin);
 
-            if (choice) this->participants = false;
-            else this->participants = true;
+            if (choice) Game::participants = false;
+            else Game::participants = true;
         }
 
     }
@@ -475,8 +653,10 @@ void Double::renderPoints() const
 {
     std::string aPointsString = std::to_string(this->aPoints);
     std::string bPointsString = std::to_string(this->bPoints);
-    mvwprintw(this->mWindows[0], 2, mScreenWidth / 2 - 3, "%s", aPointsString.c_str());
-    mvwprintw(this->mWindows[0], 2, mScreenWidth / 2 + 1, "%s", bPointsString.c_str());
+    mvwprintw(this->mWindows[0], 2, 1, "%s", "Points: ");
+    mvwprintw(this->mWindows[0], 2, 9, "%s", aPointsString.c_str());
+    mvwprintw(this->mWindows[0], 2, mScreenWidth - 2 - 9, "%s", "Points: ");
+    mvwprintw(this->mWindows[0], 2, mScreenWidth - 3, "%s", bPointsString.c_str());
     wrefresh(this->mWindows[0]);
 }
 
@@ -489,12 +669,9 @@ void Solo::renderDifficulty() const
 
 void Double::renderDifficulty() const
 {
-    std::string aDifficultyString = std::to_string(this->aDifficulty);
-    std::string bDifficultyString = std::to_string(this->bDifficulty);
+    std::string DifficultyString = std::to_string(Double::Difficulty);
     mvwprintw(this->mWindows[0], 1, 1, "%s", "Difficulty: ");
-    mvwprintw(this->mWindows[0], 1, 13, "%s", aDifficultyString.c_str());
-    mvwprintw(this->mWindows[0], 1, mScreenWidth - 2 - 12, "%s", "Difficulty: ");
-    mvwprintw(this->mWindows[0], 1, mScreenWidth - 2, "%s", bDifficultyString.c_str());
+    mvwprintw(this->mWindows[0], 1, 13, "%s", DifficultyString.c_str());
 }
 
 
@@ -514,7 +691,6 @@ SnakeBody Game::createRandomFood()
 
 SnakeBody Double::createRandomFood()
 {
-
     // create a food at random places
     // make sure that the food doesn't overlap with the snake.
     int width, height;
@@ -699,18 +875,8 @@ void Game::adjustDelay()
 
 void Double::adjustDelay()
 {
-    this->aDifficulty = this->aDifficulty_init + this->aPoints / 5;
-    if (aPoints % 5 == 0)
-    {
-        this->aDelay = this->mBaseDelay * pow(0.75, this->aDifficulty);
-    }
-    this->bDifficulty = this->bDifficulty_init + this->bPoints / 5;
-    if (bPoints % 5 == 0)
-    {
-        this->bDelay = this->mBaseDelay * pow(0.75, this->bDifficulty);
-    }
+    this->mDelay = this->mBaseDelay * pow(0.75, Double::Difficulty);
 }
-
 
 void Solo::initializeGame()
 {
@@ -729,7 +895,7 @@ void Solo::initializeGame()
     //5.initialize the difficulty
     this->renderDifficulty();
     //6.Check if it has walls
-    this->mPtrSnake->hasWalls(this->has_walls);
+    this->mPtrSnake->hasWalls(Game::has_walls);
 }
 
 void Double::initializeGame()
@@ -752,8 +918,8 @@ void Double::initializeGame()
     //5.initialize the difficulty
     this->renderDifficulty();
     //6.Check if it has walls
-    this->aPtrSnake->hasWalls(this->has_walls);
-    this->bPtrSnake->hasWalls(this->has_walls);
+    this->aPtrSnake->hasWalls(Game::has_walls);
+    this->bPtrSnake->hasWalls(Game::has_walls);
 }
 
 Status Solo::runGame()
@@ -788,7 +954,7 @@ Status Solo::runGame()
             if (moveSuccess) this->mPoints++;
             // refresh();
             std::this_thread::sleep_for(std::chrono::milliseconds(this->mDelay));
-            if (dynamic_difficulty) this->adjustDelay();
+            if (Game::dynamic_difficulty) this->adjustDelay();
 
     }
 }
@@ -835,7 +1001,7 @@ Status Double::runGame()
         if (bMoveSuccess) this->bPoints++;
         // refresh();
         std::this_thread::sleep_for(std::chrono::milliseconds(this->mDelay));
-        if (dynamic_difficulty) this->adjustDelay();
+        //if (dynamic_difficulty) this->adjustDelay();
 
     }
 }
@@ -845,14 +1011,26 @@ void Game::startGame() {
     refresh();
     int choice = this->renderMenu(MAIN_MENU);
 
-    Game* play = new Solo;
+    Game* play;
+
+    if (participants)
+    {
+        play = new Solo;
+    }
+    else
+    {
+        play = new Double;
+    }
 
     while(true) {
         switch (choice) {
             case NEW_GAME: {
+
                 if (play != nullptr) delete play;
+
                 if (participants)  play = new Solo;
                 else play = new Double;
+
                 play->renderBoards();
                 if (participants) {
                     play->updateLeaderBoard();
@@ -870,12 +1048,12 @@ void Game::startGame() {
                 break;
             }
             case MODE: {
-                this->renderMode();
+                play->renderMode();
                 choice = MAIN_MENU;
                 break;
             }
             case SETTINGS: {
-                this->renderSettings();
+                play->renderSettings();
                 choice = MAIN_MENU;
                 break;
             }
@@ -1090,6 +1268,61 @@ int Game::menuSelect(WINDOW * menu, std::vector<std::string> lists, int axis_y, 
     return index;
 }
 
+void Game::numSelect(WINDOW * menu, std::vector<int> &original, std::vector<int> &positions, int axis_y, int axis_x) const
+{
+    assert(original.size() == positions.size());
+    int size = original.size();
+    int key, index = 0;
+    for(;index < size; index++)
+    {
+        if (index != 0)
+        {
+            mvwprintw(menu, axis_y, axis_x + positions[index], "%s", std::to_string(original[index]).c_str());
+        }
+        else
+        {
+            wattron(menu, A_STANDOUT);
+            mvwprintw(menu, axis_y, axis_x + positions[index], "%s", std::to_string(original[index]).c_str());
+            wattroff(menu, A_STANDOUT);
+        }
+    }
+    wnoutrefresh(menu);
+    doupdate();
+
+    index = 0;
+    while(true)
+    {
+        key = getch();
+        if (key >= 0 && key <= 9 && index < size - 1)
+        {
+            mvwprintw(menu, axis_y, axis_x + index, "%s", std::to_string(key).c_str());
+            wattron(menu, A_STANDOUT);
+            mvwprintw(menu, axis_y, axis_x + index + 1, "%s", std::to_string(original[index + 1]).c_str());
+            wattroff(menu, A_STANDOUT);
+            original[index] = key;
+            wnoutrefresh(menu);
+            doupdate();
+            index++;
+        }
+        else if (key == KEY_BACKSPACE && index > 0)
+        {
+            wattron(menu, A_STANDOUT);
+            mvwprintw(menu, axis_y, axis_x + index + 1, "%s", std::to_string(original[index - 1]).c_str());
+            wattroff(menu, A_STANDOUT);
+            wnoutrefresh(menu);
+            doupdate();
+            index--;
+        }
+        else if (key == KEY_BACKSPACE && index == 0)
+        {
+            continue;
+        }
+        else if (key == KEY_ENTER || key == 27)
+        {
+            break;
+        }
+    }
+}
 // https://en.cppreference.com/w/cpp/io/basic_fstream
 bool Game::readLeaderBoard()
 {
