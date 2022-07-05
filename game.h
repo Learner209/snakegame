@@ -14,6 +14,12 @@
 #include <iostream>
 
 #include <cassert>
+
+//Multi-thread
+#include <atomic>
+#include <mutex>
+#include <condition_variable>
+
 //Game Status
 enum Status{END_OF_THE_GAME,aEND_OF_THE_GAME, bEND_OF_THE_GAME, NEW_GAME, RESUME_GAME, PAUSE_GAME,
     MAIN_MENU, QUIT, MODE, SETTINGS, ABNORMAL_EXIT, NULL_INPUT};
@@ -29,53 +35,39 @@ public:
 
 
     void createInformationBoard();
-
     void renderInformationBoard() { return; };
 
     virtual void createGameBoard() { return; };
-
     virtual void renderGameBoard() const { return; };
 
     virtual void createInstructionBoard() { return; };
-
     virtual void renderInstructionBoard() { return; };
 
     void loadLeadBoard();
-
     void updateLeadBoard();
-
     bool readLeaderBoard();
-
     bool updateLeaderBoard();
-
     bool writeLeaderBoard();
-
     void renderLeaderBoard() const;
 
     virtual void renderBoards() { return; };
 
     virtual void initializeGame() { return; };
-
     virtual Status runGame() { return RESUME_GAME; };
 
     virtual void renderPoints() const { return; };
-
     virtual void renderDifficulty() const { return; };
 
     SnakeBody createRandomFood();
 
     virtual void renderFood() const { return; };
-
     virtual void renderSnake() const { return; };
-
     virtual bool controlSnake() const { return true; };
 
     void startGame();
 
-    virtual Status renderMenu(Status status);
-
+    virtual Status renderMenu(Status status, int delay = 0);
     virtual void renderSettings();
-
     void renderMode();
 
     void adjustDelay();
@@ -114,13 +106,16 @@ protected:
     MEVENT event;
     //Participants
     static bool participants;
+    //Multi-thread
+    std::mutex m;
+    std::condition_variable cond;
     //Terrain
     std::vector <std::string> Terrains = {"Plain"};
     int indexTerrain = 0;
     //Auxiliary: Menu Select
     int menuSelect(WINDOW *menu, std::vector <std::string> lists, int axis_y, int axis_x, int whitespace, int init,
                    bool direction = 1);
-    void numSelect(WINDOW *menu, std::vector<int> &original, std::vector<int> &positions, int axis_y, int axis_x) const;
+    void numSelect(WINDOW *menu, std::vector<int> &original, std::vector<int> &positions, int axis_y, int axis_x);
 
 };
 
@@ -164,20 +159,23 @@ public:
 
     void renderBoards();
     void renderSettings();
-    Status renderMenu(Status status);
+    Status renderMenu(Status status, int delay = 0);
 
     void adjustDelay();
-
+    inline void renderCountdown(std::string * countdown, std::atomic_int * size, Status * signal);
     void renderDifficulty() const;
 
     SnakeBody createRandomFood();
-    void renderFood() const;
+    inline void renderFood(SnakeBody, WINDOW*) const;
     void renderPoints() const;
-    void renderSnake() const;
+    inline void renderSnake(std::unique_ptr<Snake> & snake, WINDOW* win) const;
+    inline void renderASnake() const;
+    inline void renderBSnake() const;
 
     bool controlSnake() const;
     void initializeGame();
     Status runGame();
+
 
 protected:
     std::unique_ptr<Snake> aPtrSnake;
@@ -196,7 +194,7 @@ protected:
     int aPoints = 0;
     int bPoints = 0;
 
-    int mCountdown = 60;
+    int mCountdown = 20;
 
     SnakeBody aFood;
     SnakeBody bFood;
