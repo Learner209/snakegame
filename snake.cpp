@@ -6,6 +6,7 @@
 #include <string>
 #include <cstdlib>
 #include <ctime>
+#include <cmath>
 #include <iostream>
 #include <ncurses.h>
 #include "snake.h"
@@ -77,24 +78,19 @@ void Snake::initializeSnake()
 
 bool Snake::isPartOfSnake(int x, int y)
 {
-    // TODO check if a given point with axis x, y is on the body of the snake.
-
     int l = this->getLength();
     for(int i = 0; i < l ; i++){
         if (mSnake[i].getX() == x && mSnake[i].getY() == y) return true;
     }
     return false;
-
 }
 
 /*
  * Assumption:
  * Only the head would hit wall.
  */
-bool Snake::hitWall()
+bool Snake::hitWall() const
 {
-    // TODO check if the snake has hit the wall
-
     return mSnake[0].getX() == 0 ||
             mSnake[0].getX() == mGameBoardWidth - 1 ||
             mSnake[0].getY() == 0 ||
@@ -104,15 +100,43 @@ bool Snake::hitWall()
 /*
  * The snake head is overlapping with its body
  */
-bool Snake::hitSelf()
+bool Snake::hitSelf() const
 {
-    // TODO check if the snake has hit itself.
+    //check if the snake has hit itself.
     int l = getLength();
-    for(int i = 2; i < l ; i++){
+    for(int i = 3; i < l ; i++){
         if (mSnake[i].getX() ==  mSnake[0].getX() && mSnake[i].getY() == mSnake[0].getY()) return true;
     }
     return false;
 
+}
+
+bool Snake::toHitWall() const
+{
+    //check if the snake is yet to hit the wall
+    if (has_walls)
+    {
+        return (mSnake[0].getX() == 1 && this->mDirection == Direction::Left) ||
+               (mSnake[0].getX() == mGameBoardWidth - 2  && this->mDirection == Direction::Right) ||
+               (mSnake[0].getY() == 1 && this->mDirection == Direction::Up)||
+               (mSnake[0].getY() == mGameBoardHeight - 2 && this->mDirection == Direction::Down);
+    }
+    else
+    {
+        return false;
+    }
+
+}
+
+bool Snake::toHitSelf() const
+{
+    // check if the snake is yet to hit itself.
+    SnakeBody toMove = this->createNewHead();
+    int l = getLength();
+    for(int i = 3; i < l ; i++){
+        if (mSnake[i].getX() ==  toMove.getX() && mSnake[i].getY() == toMove.getY()) return true;
+    }
+    return false;
 }
 
 void Snake::senseFood(SnakeBody food)
@@ -127,136 +151,271 @@ std::vector<SnakeBody>& Snake::getSnake()
 
 bool Snake::changeDirection(Direction newDirection)
 {
-    if (manual)
+    switch (this->mDirection)
     {
-        switch (this->mDirection)
+        case Direction::Up:
         {
-            case Direction::Up:
-            {
-                if (newDirection == Direction::Left) this->mDirection = Direction::Left;
-                else if (newDirection == Direction::Right) this->mDirection = Direction::Right;
-                return true;
-            }
-            case Direction::Down:
-            {
-                if (newDirection == Direction::Left) this->mDirection = Direction::Left;
-                else if (newDirection == Direction::Right) this->mDirection = Direction::Right;
-                return true;
-            }
-            case Direction::Left:
-            {
-                if (newDirection == Direction::Up) this->mDirection = Direction::Up;
-                else if (newDirection == Direction::Down) this->mDirection = Direction::Down;
-                return true;
-            }
-            case Direction::Right:
-            {
-                if (newDirection == Direction::Up) this->mDirection = Direction::Up;
-                else if (newDirection == Direction::Down) this->mDirection = Direction::Down;
-                return true;
-            }
+            if (newDirection == Direction::Left) this->mDirection = Direction::Left;
+            else if (newDirection == Direction::Right) this->mDirection = Direction::Right;
+            return true;
         }
-        return true;
-    }
-    else
-    {
-        int probability = this->randomInteger(0,10);
-        if (probability < 6) return true;
-        switch(this->mDirection)
+        case Direction::Down:
         {
-            case Direction::Up:
-            {
-                if ((this->mFood.getY() == this->mSnake[0].getY() + 1 || this->mFood.getY() == this->mSnake[0].getY() - 1 ) && probability < 3)
-                {
-                    return true;
-                }
-                else if ((this->mFood.getY() > this->mSnake[0].getY() && probability < 2)
-                         || (this->mFood.getY() == this->mSnake[0].getY() && probability < 7)
-                         || (this->mFood.getY() < this->mSnake[0].getY() && probability < 9))
-                {
-                    if (this->mFood.getX() > this->mSnake[0].getX())
-                    {
-                        this->mDirection = Direction::Right;
-                    }
-                    else
-                    {
-                        this->mDirection = Direction::Left;
-                    }
-                }
-                return true;
-            }
-            case Direction::Down :
-            {
-                if ((this->mFood.getY() == this->mSnake[0].getY() + 1 || this->mFood.getY() == this->mSnake[0].getY() - 1 ) && probability < 3)
-                {
-                    break;
-                }
-                else if ((this->mFood.getY() < this->mSnake[0].getY() && probability < 2)
-                         || (this->mFood.getY() == this->mSnake[0].getY() && probability < 7)
-                         || (this->mFood.getY() > this->mSnake[0].getY() && probability < 9))
-                {
-                    if (this->mFood.getX() > this->mSnake[0].getX())
-                    {
-                        this->mDirection = Direction::Right;
-                    }
-                    else
-                    {
-                        this->mDirection = Direction::Left;
-                    }
-                }
-                return true;
-            }
-            case Direction::Left:
-            {
-                if ((this->mFood.getX() == this->mSnake[0].getX() + 1 || this->mFood.getX() == this->mSnake[0].getX() - 1 ) && probability < 3)
-                {
-                    break;
-                }
-                else if ((this->mFood.getX() < this->mSnake[0].getX() && probability < 2)
-                         || (this->mFood.getX() == this->mSnake[0].getX() && probability < 7)
-                         || (this->mFood.getX() > this->mSnake[0].getX() && probability < 9))
-                {
-                    if (this->mFood.getY() > this->mSnake[0].getY())
-                    {
-                        this->mDirection = Direction::Up;
-                    }
-                    else
-                    {
-                        this->mDirection = Direction::Down;
-                    }
-                }
-                return true;
-            }
-            case Direction::Right:
-            {
-                if ((this->mFood.getX() == this->mSnake[0].getX() + 1 || this->mFood.getX() == this->mSnake[0].getX() - 1 ) && probability < 3)
-                {
-                    break;
-                }
-                else if ((this->mFood.getX() > this->mSnake[0].getX() && probability < 2)
-                         || (this->mFood.getX() == this->mSnake[0].getX() && probability < 7)
-                         || (this->mFood.getX() < this->mSnake[0].getX() && probability < 9))
-                {
-                    if (this->mFood.getY() > this->mSnake[0].getY())
-                    {
-                        this->mDirection = Direction::Up;
-                    }
-                    else
-                    {
-                        this->mDirection = Direction::Down;
-                    }
-                }
-                return true;
-            }
+            if (newDirection == Direction::Left) this->mDirection = Direction::Left;
+            else if (newDirection == Direction::Right) this->mDirection = Direction::Right;
+            return true;
         }
-        return true;
+        case Direction::Left:
+        {
+            if (newDirection == Direction::Up) this->mDirection = Direction::Up;
+            else if (newDirection == Direction::Down) this->mDirection = Direction::Down;
+            return true;
+        }
+        case Direction::Right:
+        {
+            if (newDirection == Direction::Up) this->mDirection = Direction::Up;
+            else if (newDirection == Direction::Down) this->mDirection = Direction::Down;
+            return true;
+        }
     }
     return true;
-
 }
 
+void Snake::simulateDirection(int difficulty, int delay) {
+    int probability = this->randomInteger(0,20);
+    /* MisTackle: the probability of missing the food
+     * strike: the capability of hitting the food rather than revolving around it
+     * moveBack: the sharpness of sensing the next food
+     * collision: the ability to avoid collision*/
 
-SnakeBody Snake::createNewHead()
+    int misTackle = difficulty * pow(1.2, delay), strike = (20 - difficulty * 4) * pow(0.8, delay);
+    int moveBack = (20 - 5 * difficulty) * pow(0.9, delay), collision = difficulty / 2;
+
+    switch(this->mDirection)
+    {
+        case Direction::Up:
+        {
+            if (this->toHitWall())
+            {
+                if (mSnake[0].getX() == 1)
+                {
+                    this->mDirection = Direction::Right;
+                    return;
+                }
+                else if (mSnake[0].getX() == this->mGameBoardWidth - 2)
+                {
+                    this->mDirection = Direction::Left;
+                    return;
+                }
+                else if (probability < collision)
+                {
+                    return;
+                }
+                this->mDirection = (probability < 5)? Direction::Left : Direction::Right;
+                return;
+            }
+            if (this->toHitSelf())
+            {
+                SnakeBody head = this->mSnake[0];
+                for (int i = 0; i < head.getX(); i++){
+                    if (this->isPartOfSnake(i, head.getY()))
+                    {
+                        this->mDirection = Direction::Right;
+                        return;
+                    }
+                }
+                this->mDirection = Direction::Left;
+                return;
+            }
+            if (this->isPartOfSnake(this->mSnake[0].getX() - 1, this->mSnake[0].getY())
+                || this->isPartOfSnake(this->mSnake[0].getX() + 1, this->mSnake[0].getY()))
+            {
+                return;
+            }
+            if ((this->mFood.getY() == this->mSnake[0].getY() + 1 || this->mFood.getY() == this->mSnake[0].getY() - 1)
+                  && probability < misTackle && this->mFood.getX() != this->mSnake[0].getX()
+                 || this->mFood.getY() == this->mSnake[0].getY() && probability < strike
+                 || this->mFood.getY() > this->mSnake[0].getY() && probability < moveBack)
+            {
+                if (this->mFood.getX() > this->mSnake[0].getX())
+                {
+                    this->mDirection = Direction::Right;
+                }
+                else
+                {
+                    this->mDirection = Direction::Left;
+                }
+            }
+            return;
+        }
+        case Direction::Down:
+        {
+            if (this->toHitWall())
+            {
+                if (mSnake[0].getX() == 1)
+                {
+                    this->mDirection = Direction::Right;
+                    return;
+                }
+                else if (mSnake[0].getX() == this->mGameBoardWidth - 2)
+                {
+                    this->mDirection = Direction::Left;
+                    return;
+                }
+                else if (probability < collision)
+                {
+                    return;
+                }
+                this->mDirection = (probability < 5)? Direction::Left : Direction::Right;
+                return;
+            }
+            if (this->toHitSelf())
+            {
+                SnakeBody head = this->mSnake[0];
+                for (int i = 0; i < head.getX(); i++){
+                    if (this->isPartOfSnake(i, head.getY()))
+                    {
+                        this->mDirection = Direction::Right;
+                        return;
+                    }
+                }
+                this->mDirection = Direction::Left;
+                return;
+            }
+            if (this->isPartOfSnake(this->mSnake[0].getX() - 1, this->mSnake[0].getY())
+                || this->isPartOfSnake(this->mSnake[0].getX() + 1, this->mSnake[0].getY()))
+            {
+                return;
+            }
+            if ((this->mFood.getY() == this->mSnake[0].getY() + 1 || this->mFood.getY() == this->mSnake[0].getY() - 1 )
+                && probability < misTackle && this->mFood.getX() != this->mSnake[0].getX()
+                || this->mFood.getY() == this->mSnake[0].getY() && probability < strike
+                || this->mFood.getY() < this->mSnake[0].getY() && probability < moveBack)
+            {
+                if (this->mFood.getX() > this->mSnake[0].getX())
+                {
+                    this->mDirection = Direction::Right;
+                }
+                else
+                {
+                    this->mDirection = Direction::Left;
+                }
+            }
+            return;
+        }
+        case Direction::Left:
+        {
+            if (this->toHitWall())
+            {
+                if (mSnake[0].getY() == 1)
+                {
+                    this->mDirection = Direction::Down;
+                    return;
+                }
+                else if (mSnake[0].getY() == this->mGameBoardHeight - 2)
+                {
+                    this->mDirection = Direction::Up;
+                    return;
+                }
+                else if (probability < collision)
+                {
+                    return;
+                }
+                this->mDirection = (probability < 5)? Direction::Up : Direction::Down;
+                return;
+            }
+            if (this->toHitSelf())
+            {
+                SnakeBody head = this->mSnake[0];
+                for (int i = 0; i < head.getY(); i++){
+                    if (this->isPartOfSnake(head.getX(), i))
+                    {
+                        this->mDirection = Direction::Down;
+                        return;
+                    }
+                }
+                this->mDirection = Direction::Up;
+                return;
+            }
+            if (this->isPartOfSnake(this->mSnake[0].getX(), this->mSnake[0].getY() - 1)
+                || this->isPartOfSnake(this->mSnake[0].getX(), this->mSnake[0].getY() + 1))
+            {
+                return;
+            }
+            if ((this->mFood.getX() == this->mSnake[0].getX() + 1 || this->mFood.getX() == this->mSnake[0].getX() - 1 )
+                && probability < misTackle && this->mFood.getY() != this->mSnake[0].getY()
+                || this->mFood.getX() == this->mSnake[0].getX() && probability < strike
+                || this->mFood.getX() > this->mSnake[0].getX() && probability < moveBack)
+            {
+                if (this->mFood.getY() > this->mSnake[0].getY())
+                {
+                    this->mDirection = Direction::Down;
+                }
+                else
+                {
+                    this->mDirection = Direction::Up;
+                }
+            }
+            return;
+        }
+        case Direction::Right:
+        {
+            if (this->toHitWall())
+            {
+                if (mSnake[0].getY() == 1)
+                {
+                    this->mDirection = Direction::Down;
+                    return;
+                }
+                else if (mSnake[0].getY() == this->mGameBoardHeight - 2)
+                {
+                    this->mDirection = Direction::Up;
+                    return;
+                }
+                else if (probability < collision)
+                {
+                    return;
+                }
+                this->mDirection = (probability < 5)? Direction::Up : Direction::Down;
+            }
+            if (this->toHitSelf())
+            {
+                SnakeBody head = this->mSnake[0];
+                for (int i = 0; i < head.getY(); i++){
+                    if (this->isPartOfSnake(head.getX(), i))
+                    {
+                        this->mDirection = Direction::Down;
+                        return;
+                    }
+                }
+                this->mDirection = Direction::Up;
+                return;
+            }
+            if (this->isPartOfSnake(this->mSnake[0].getX(), this->mSnake[0].getY() - 1)
+                || this->isPartOfSnake(this->mSnake[0].getX(), this->mSnake[0].getY() + 1))
+            {
+                return;
+            }
+            if ((this->mFood.getX() == this->mSnake[0].getX() + 1 || this->mFood.getX() == this->mSnake[0].getX() - 1 )
+                && probability < misTackle  && this->mFood.getY() != this->mSnake[0].getY()
+                || this->mFood.getX() == this->mSnake[0].getX() && probability < strike
+                || this->mFood.getX() < this->mSnake[0].getX() && probability < moveBack)
+            {
+                if (this->mFood.getY() > this->mSnake[0].getY())
+                {
+                    this->mDirection = Direction::Down;
+                }
+                else
+                {
+                    this->mDirection = Direction::Up;
+                }
+            }
+            return;
+        }
+    }
+}
+
+SnakeBody Snake::createNewHead() const
 {
     /* TODO
      * read the position of the current head
@@ -264,7 +423,6 @@ SnakeBody Snake::createNewHead()
      * add the new head according to the direction
      * return the new snake
      */
-
     SnakeBody currentHead = this->mSnake[0];
     int width = currentHead.getX();
     int height = currentHead.getY();
@@ -327,7 +485,7 @@ void Snake::hasWalls(bool has_walls) {
     this->has_walls = has_walls;
 }
 
-int Snake::getLength()
+int Snake::getLength() const
 {
     return this->mSnake.size();
 }
@@ -338,7 +496,7 @@ void Snake::manualOrMachine(bool flag)
 }
 
 
-int Snake::randomInteger(int low, int high)
+int Snake::randomInteger(int low, int high) const
 {
     return low + rand() % (high - low);
 }

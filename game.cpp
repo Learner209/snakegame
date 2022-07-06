@@ -16,7 +16,6 @@
 #include <fstream>
 #include <algorithm>
 
-int hahaha = 0;
 
 bool Game::participants = false;
 bool Game::dynamic_difficulty = true;
@@ -369,10 +368,11 @@ Status Double::renderMenu(Status status, int delay)
             axis_y = (height - 6) / 2 + 3;
             axis_x = (width / 2 - 16) / 2 + 16;
             menuItems.insert(menuItems.begin() + 1, "Main Menu");
-            mvwprintw(menu, axis_y - 3, axis_x - 16, "Player A's Score:");
-            mvwprintw(menu, axis_y - 3, axis_x + width / 2 - 1 - 16, "Player B's Score:");
             std::string aPoint = std::to_string(this->aPoints);
             std::string bPoint = std::to_string(this->bPoints);
+
+            mvwprintw(menu, axis_y - 3, axis_x - 16, (this->manToMachine) ? "Player's Score": "Player A's Score:");
+            mvwprintw(menu, axis_y - 3, axis_x + width / 2 - 1 - 16, (this->manToMachine) ? "Computer's Score": "Player B's Score:");
             mvwprintw(menu, axis_y - 2, axis_x - 16, "%s", aPoint.c_str());
             mvwprintw(menu, axis_y - 2, axis_x + width / 2 - 1 - 16, "%s", bPoint.c_str());
             break;
@@ -380,7 +380,7 @@ Status Double::renderMenu(Status status, int delay)
         case aEND_OF_THE_GAME:
         {
             axis_y = (height - 5) / 2 + 3;
-            mvwprintw(menu, axis_y - 3, 3, "Player A's Score:");
+            mvwprintw(menu, axis_y - 3, 3, (this->manToMachine) ? "Player's Score": "Player A's Score:");
             std::string aPoint = std::to_string(this->aPoints);
             mvwprintw(menu, axis_y - 2, 3, "%s", aPoint.c_str());
             mvwprintw(menu, axis_y, 3, "%s", "Do me a favor...");
@@ -392,11 +392,11 @@ Status Double::renderMenu(Status status, int delay)
         case bEND_OF_THE_GAME:
         {
             axis_y = (height - 5) / 2 + 3;
-            mvwprintw(menu, axis_y - 3, 3, "Player B's Score:");
+            mvwprintw(menu, axis_y - 3, 3, (this->manToMachine) ? "Computer's Score": "Player B's Score:");
             std::string bPoint = std::to_string(this->bPoints);
             mvwprintw(menu, axis_y - 2, 3, "%s", bPoint.c_str());
-            mvwprintw(menu, axis_y, 3, "%s", "Do me a favor...");
-            mvwprintw(menu, axis_y + 1, 3, "%s", "Perform better next time?");
+            mvwprintw(menu, axis_y, 3, "%s", (this->manToMachine) ? "Oops...": "Do me a favor...");
+            mvwprintw(menu, axis_y + 1, 3, "%s", (this->manToMachine) ? "Man beat Computer? Unbelievable..." : "Perform better next time?");
             wrefresh(menu);
             std::this_thread::sleep_for(std::chrono::milliseconds(delay));
             break;
@@ -524,20 +524,49 @@ void Double::renderSettings()
     WINDOW * setting = newwin(this->mScreenHeight * 0.618, this->mScreenWidth * 0.618, startY, startX);
     box(setting, 0, 0);
 
-    float axis_y = (this->mScreenHeight * 0.618 - 6) / 2;
+    float axis_y = (this->manToMachine) ? (this->mScreenHeight * 0.618 - 10) / 2 : (this->mScreenHeight * 0.618 - 8) / 2;
     float axis_x = (this->mScreenWidth * 0.618 - 12) / 2;
-    std:std::vector<std::string> settings = {"Difficulty:", "Countdown", "Has walls:"};
-
+    std:std::vector<std::string> settings = {"Speed:", "Countdown", "Has walls:", "Man to ?:"};
+    if (this->manToMachine)
+    {
+        settings.push_back("Difficulty:");
+    }
     while(true) {
 
         std::string mDifficulty = std::to_string(Double::Difficulty);
-        mvwprintw(setting, axis_y + 1, axis_x, "%s", mDifficulty.c_str());
         std::string countdown = std::to_string(mCountdown / 60) + ": ";
         countdown += ((this->mCountdown - this->mCountdown / 60 * 60) < 10) ? "0" + std::to_string(this->mCountdown - this->mCountdown / 60 * 60):
                      std::to_string(this->mCountdown - this->mCountdown / 60 * 60);
         std::string has_walls = (Game::has_walls) ? "ON" : "OFF";
+        std::string manToMachine = (this->manToMachine) ? "Man to Computer": "Man to Man";
+        if (this->manToMachine)
+        {
+            std::string smartness;
+            switch ((this->machineSmartness)) {
+                case 0:{
+                    smartness = "Hard";
+                    break;
+                }
+                case 1:{
+                    smartness = "Medium";
+                    break;
+                }
+                case 2:{
+                    smartness = "Normal";
+                    break;
+                }
+                case 3:{
+                    smartness = "Easy";
+                    break;
+                }
+            }
+            mvwprintw(setting, axis_y + 9, axis_x, "%s", smartness.c_str());
+        }
+
+        mvwprintw(setting, axis_y + 1, axis_x, "%s", mDifficulty.c_str());
         mvwprintw(setting, axis_y + 3, axis_x, "%s", countdown.c_str());
         mvwprintw(setting, axis_y + 5, axis_x, "%s", has_walls.c_str());
+        mvwprintw(setting, axis_y + 7, axis_x, "%s", manToMachine.c_str());
         wnoutrefresh(setting);
 
         int index = this->menuSelect(setting, settings, axis_y, axis_x, 2, 0);
@@ -600,6 +629,75 @@ void Double::renderSettings()
             delwin(setWin);
             if (choice) Game::has_walls = false;
             else Game::has_walls = true;
+        }
+        else if (index == 3)
+        {
+            tmp = {"Man to Man", "Man to Computer"};
+            WINDOW *setWin = newwin(7, 20, (mScreenHeight - 7) / 2, (mScreenWidth - 15) / 2);
+            box(setWin, 0, 0);
+            if (!this->manToMachine) {
+                choice = this->menuSelect(setWin, tmp, 2, 3, 2, 0);
+            } else {
+                choice = this->menuSelect(setWin, tmp, 2, 3, 2, 1);
+            }
+            werase(setWin);
+            wrefresh(setWin);
+            delwin(setWin);
+            if (choice) this->manToMachine = true;
+            else this->manToMachine = false;
+        }
+        else if (index == 4)
+        {
+            tmp = {"Easy", "Normal", "Medium", "Hard"};
+            WINDOW *setWin = newwin(8, 20, (mScreenHeight - 7) / 2, (mScreenWidth - 6) / 2);
+            box(setWin, 0, 0);
+            switch (this->machineSmartness) {
+                case 0:
+                {
+                    choice = this->menuSelect(setWin, tmp, 2, 7, 1, 3);
+                    break;
+                }
+                case 1:
+                {
+                    choice = this->menuSelect(setWin, tmp, 2, 7, 1, 2);
+                    break;
+                }
+                case 2:
+                {
+                    choice = this->menuSelect(setWin, tmp, 2, 7, 1, 1);
+                    break;
+                }
+                case 3:
+                {
+                    choice = this->menuSelect(setWin, tmp, 2, 7, 1, 0);
+                    break;
+                }
+            }
+            werase(setWin);
+            wrefresh(setWin);
+            delwin(setWin);
+            switch (choice) {
+                case 0:
+                {
+                  this->machineSmartness = 3;
+                  break;
+                }
+                case 1:
+                {
+                    this->machineSmartness = 2;
+                    break;
+                }
+                case 2:
+                {
+                    this->machineSmartness = 1;
+                    break;
+                }
+                case 3:
+                {
+                    this->machineSmartness = 0;
+                    break;
+                }
+            }
         }
         werase(setting);
         box(setting, 0, 0);
@@ -819,7 +917,7 @@ bool Double::controlSnake() const
     key = getch();
 
     if (manToMachine) {
-        this->bPtrSnake->changeDirection();
+        this->bPtrSnake->simulateDirection(this->machineSmartness, Double::Difficulty);
         switch (key) {
             case 'W':
             case 'w':
@@ -945,7 +1043,6 @@ void Solo::initializeGame()
 
 void Double::initializeGame()
 {
-    hahaha++;
     // allocate memory for a new snake
     this->aPtrSnake.reset(new Snake(this->mGameBoardWidth, this->mGameBoardHeight, this->mInitialSnakeLength));
     this->bPtrSnake.reset(new Snake(this->mGameBoardWidth, this->mGameBoardHeight, this->mInitialSnakeLength));
@@ -1067,7 +1164,6 @@ Status Double::runGame()
                 }
             }
             bool aMoveSuccess = false, bMoveSuccess = false;
-
             // 2. clear the window
             werase(this->mWindows[0]);
             if (*signal == aEND_OF_THE_GAME)
@@ -1089,12 +1185,10 @@ Status Double::runGame()
                 wnoutrefresh(this->mWindows[i]);
             }
             // 3. move the current snake forward
-
             if (*signal != aEND_OF_THE_GAME && this->aPtrSnake->moveFoward()) aMoveSuccess = true;
             if (*signal != bEND_OF_THE_GAME && this->bPtrSnake->moveFoward()) bMoveSuccess = true;
             // 4. check if the snake has eaten the food after movement
             // 5. check if the snake dies after the movement
-
             if (this->aPtrSnake->checkCollision())
             {
                 if (*signal == bEND_OF_THE_GAME)
@@ -1113,7 +1207,7 @@ Status Double::runGame()
                     WINDOW * win = newwin(height, width, startY, startX);
                     box(win, 0, 0);
                     int axis_y = (this->mGameBoardHeight * 0.5 - 5) / 2 + 3;
-                    mvwprintw(win, axis_y - 3, 3, "Player A's Score:");
+                    mvwprintw(win, axis_y - 3, 3, (this->manToMachine)? "Player's Score": "Player A's Score:");
                     std::string aPoint = std::to_string(this->aPoints);
                     mvwprintw(win, axis_y - 2, 3, "%s", aPoint.c_str());
                     mvwprintw(win, axis_y, 3, "%s", "Do me a favor...");
@@ -1133,18 +1227,19 @@ Status Double::runGame()
                 {
                     *signal = bEND_OF_THE_GAME;
                     float width, height, startX, startY;
-                    width = this->mGameBoardWidth * 0.8;
+                    width = (this->manToMachine)? this->mGameBoardWidth * 0.9: this->mGameBoardWidth * 0.8;
                     height = this->mGameBoardHeight * 0.5;
-                    startX = this->mGameBoardWidth * 0.1 + this->mScreenWidth / 2;
+                    startX = (this->manToMachine)? this->mGameBoardWidth * 0.05 + this->mScreenWidth / 2:
+                                                   this->mGameBoardWidth * 0.1 + this->mScreenWidth / 2;
                     startY = this->mGameBoardHeight * 0.25 + this->mInformationHeight;
                     WINDOW * win = newwin(height, width, startY, startX);
-                    box(win, 0, 0);
                     int axis_y = (this->mGameBoardHeight * 0.5  - 5) / 2 + 3;
-                    mvwprintw(win, axis_y - 3, 3, "Player B's Score:");
+                    mvwprintw(win, axis_y - 3, 3, (this->manToMachine)? "Computer's Score" :"Player B's Score:");
                     std::string bPoint = std::to_string(this->bPoints);
                     mvwprintw(win, axis_y - 2, 3, "%s", bPoint.c_str());
-                    mvwprintw(win, axis_y, 3, "%s", "Do me a favor...");
-                    mvwprintw(win, axis_y + 1, 3, "%s", "Perform better next time?");
+                    mvwprintw(win, axis_y, 3, (this->manToMachine)? "Oops..." :"Do me a favor...");
+                    mvwprintw(win, axis_y + 1, 3, (this->manToMachine)? "The game must have been rigged..": "Perform better next time?");
+                    box(win, 0, 0);
                     wrefresh(win);
                 }
             }
@@ -1241,11 +1336,9 @@ void Game::startGame() {
                 }
                 play->initializeGame();
                 choice = play->runGame();
-
                 break;
             }
             case END_OF_THE_GAME: {
-
                 choice = play->renderMenu(END_OF_THE_GAME);
                 if (choice == ABNORMAL_EXIT) choice = MAIN_MENU;
                 break;

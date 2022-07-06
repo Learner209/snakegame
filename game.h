@@ -193,13 +193,15 @@ protected:
     int aPoints = 0;
     int bPoints = 0;
 
-    int mCountdown = 20;
+    int mCountdown = 60;
 
     SnakeBody aFood;
     SnakeBody bFood;
 
     int aDelay = 0;
     int bDelay = 0;
+    //Man to Machine
     bool manToMachine = true;
+    int machineSmartness = 0;
 };
 #endif

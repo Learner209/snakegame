@@ -45,14 +45,15 @@ public:
     void senseFood(SnakeBody food);
     bool touchFood();
     // Check if the snake is dead
-    bool hitWall();
-    bool hitSelf();
+    bool hitWall() const;
+    bool hitSelf() const;
     bool checkCollision();
 
-    virtual bool changeDirection(Direction newDirection = Direction::Up);
+    bool changeDirection(Direction newDirection = Direction::Up);
+    void simulateDirection(int, int);
     std::vector<SnakeBody>& getSnake();
-    int getLength();
-    SnakeBody createNewHead();
+    int getLength() const;
+    SnakeBody createNewHead() const;
     bool moveFoward();
     void hasWalls(bool);
     void manualOrMachine(bool);
@@ -67,8 +68,11 @@ protected:
     std::vector<SnakeBody> mSnake;
     bool has_walls;
     bool manual = true;
+    int machineSmartness = 0;
     //auxiliary function
-    int randomInteger(int low, int high);
+    int randomInteger(int low, int high) const;
+    bool toHitWall() const;
+    bool toHitSelf() const;
 };
 
 
