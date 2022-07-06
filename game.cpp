@@ -12,14 +12,11 @@
 // For terminal delay
 #include <chrono>
 #include <thread>
-#include <future>
-#include <pthread.h>
-
 
 #include <fstream>
 #include <algorithm>
 
-
+int hahaha = 0;
 
 bool Game::participants = false;
 bool Game::dynamic_difficulty = true;
@@ -76,6 +73,7 @@ Double::Double():Game()
     this->mGameBoardWidth = this->mScreenWidth / 2;
     this->createInformationBoard();
     this->createGameBoard();
+
 }
 
 
@@ -369,14 +367,14 @@ Status Double::renderMenu(Status status, int delay)
         case END_OF_THE_GAME:
         {
             axis_y = (height - 6) / 2 + 3;
-            axis_x = (width / 2 - 16) / 2;
+            axis_x = (width / 2 - 16) / 2 + 16;
             menuItems.insert(menuItems.begin() + 1, "Main Menu");
-            mvwprintw(menu, axis_y - 3, axis_x, "Player A's Score:");
-            mvwprintw(menu, axis_y - 3, axis_x + width / 2 - 1, "Player B's Score:");
+            mvwprintw(menu, axis_y - 3, axis_x - 16, "Player A's Score:");
+            mvwprintw(menu, axis_y - 3, axis_x + width / 2 - 1 - 16, "Player B's Score:");
             std::string aPoint = std::to_string(this->aPoints);
             std::string bPoint = std::to_string(this->bPoints);
-            mvwprintw(menu, axis_y - 2, axis_x, "%s", aPoint.c_str());
-            mvwprintw(menu, axis_y - 2, axis_x + width / 2 - 1, "%s", bPoint.c_str());
+            mvwprintw(menu, axis_y - 2, axis_x - 16, "%s", aPoint.c_str());
+            mvwprintw(menu, axis_y - 2, axis_x + width / 2 - 1 - 16, "%s", bPoint.c_str());
             break;
         }
         case aEND_OF_THE_GAME:
@@ -763,29 +761,6 @@ inline void Double::renderSnake(std::unique_ptr<Snake> & snake, WINDOW* win) con
     wnoutrefresh(win);
 }
 
-
-inline void Double::renderASnake() const
-{
-    int SnakeLength = this->aPtrSnake->getLength();
-    std::vector<SnakeBody>& Snake = this->aPtrSnake->getSnake();
-    for (int i = 0; i < SnakeLength; i ++)
-    {
-        mvwaddch(this->mWindows[1], Snake[i].getY(), Snake[i].getX(), mSnakeSymbol);
-    }
-    wnoutrefresh(this->mWindows[1]);
-}
-
-inline void Double::renderBSnake() const
-{
-    int SnakeLength = this->bPtrSnake->getLength();
-    std::vector<SnakeBody>& Snake = this->bPtrSnake->getSnake();
-    for (int i = 0; i < SnakeLength; i ++)
-    {
-        mvwaddch(this->mWindows[2], Snake[i].getY(), Snake[i].getX(), mSnakeSymbol);
-    }
-    wnoutrefresh(this->mWindows[2]);
-}
-
 bool Solo::controlSnake() const
 {
     int key;
@@ -842,64 +817,96 @@ bool Double::controlSnake() const
 {
     int key;
     key = getch();
-    switch(key)
-    {
-        case 'W':
-        case 'w':
-        {
-            this->aPtrSnake->changeDirection(Direction::Up);
-            return true;
-        }
-        case 'S':
-        case 's':
-        {
-            this->aPtrSnake->changeDirection(Direction::Down);
-            return true;
-        }
-        case 'A':
-        case 'a':
-        {
-            this->aPtrSnake->changeDirection(Direction::Left);
-            return true;
-        }
-        case 'D':
-        case 'd':
-        {
-            this->aPtrSnake->changeDirection(Direction::Right);
-            return true;
-        }
-        case KEY_UP:
-        {
-            this->bPtrSnake->changeDirection(Direction::Up);
-            return true;
-        }
-        case KEY_DOWN:
-        {
-            this->bPtrSnake->changeDirection(Direction::Down);
-            return true;
-        }
-        case KEY_LEFT:
-        {
-            this->bPtrSnake->changeDirection(Direction::Left);
-            return true;
-        }
-        case KEY_RIGHT:
-        {
-            this->bPtrSnake->changeDirection(Direction::Right);
-            return true;
-        }
-        case ' ':
-        case KEY_BACKSPACE:
-        case 27:
-        {
-            return false;
-        }
-        default:
-        {
-            return true;
-        }
 
+    if (manToMachine) {
+        this->bPtrSnake->changeDirection();
+        switch (key) {
+            case 'W':
+            case 'w':
+            case KEY_UP: {
+                this->aPtrSnake->changeDirection(Direction::Up);
+                return true;
+            }
+            case 'S':
+            case 's':
+            case KEY_DOWN: {
+                this->aPtrSnake->changeDirection(Direction::Down);
+                return true;
+            }
+            case 'A':
+            case 'a':
+            case KEY_LEFT: {
+                this->aPtrSnake->changeDirection(Direction::Left);
+                return true;
+            }
+            case 'D':
+            case 'd':
+            case KEY_RIGHT: {
+                this->aPtrSnake->changeDirection(Direction::Right);
+                return true;
+            }
+            case ' ':
+            case KEY_BACKSPACE:
+            case 27:
+            {
+                return false;
+            }
+            default:
+            {
+                return true;
+            }
+        }
     }
+    else {
+        switch (key) {
+            case 'W':
+            case 'w': {
+                this->aPtrSnake->changeDirection(Direction::Up);
+                return true;
+            }
+            case 'S':
+            case 's': {
+                this->aPtrSnake->changeDirection(Direction::Down);
+                return true;
+            }
+            case 'A':
+            case 'a': {
+                this->aPtrSnake->changeDirection(Direction::Left);
+                return true;
+            }
+            case 'D':
+            case 'd': {
+                this->aPtrSnake->changeDirection(Direction::Right);
+                return true;
+            }
+            case KEY_UP: {
+                this->bPtrSnake->changeDirection(Direction::Up);
+                return true;
+            }
+            case KEY_DOWN: {
+                this->bPtrSnake->changeDirection(Direction::Down);
+                return true;
+            }
+            case KEY_LEFT: {
+                this->bPtrSnake->changeDirection(Direction::Left);
+                return true;
+            }
+            case KEY_RIGHT: {
+                this->bPtrSnake->changeDirection(Direction::Right);
+                return true;
+            }
+            case ' ':
+            case KEY_BACKSPACE:
+            case 27: {
+                return false;
+            }
+            default: {
+                return true;
+            }
+        }
+    }
+    return true;
+
 }
 
 void Game::adjustDelay()
@@ -938,6 +945,7 @@ void Solo::initializeGame()
 
 void Double::initializeGame()
 {
+    hahaha++;
     // allocate memory for a new snake
     this->aPtrSnake.reset(new Snake(this->mGameBoardWidth, this->mGameBoardHeight, this->mInitialSnakeLength));
     this->bPtrSnake.reset(new Snake(this->mGameBoardWidth, this->mGameBoardHeight, this->mInitialSnakeLength));
@@ -958,6 +966,10 @@ void Double::initializeGame()
     //6.Check if it has walls
     this->aPtrSnake->hasWalls(Game::has_walls);
     this->bPtrSnake->hasWalls(Game::has_walls);
+    //7.Check manual or machine
+    //this->aPtrSnake->manualOrMachine(this->manToMachine);
+    this->bPtrSnake->manualOrMachine(this->manToMachine);
+
 }
 
 Status Solo::runGame()
@@ -1014,6 +1026,7 @@ inline void Double::renderCountdown(std::string * countdown, std::atomic_int * s
             tmp -= interval;
             *size -= 1;
         }
+
         if (*signal == END_OF_THE_GAME)
         {
             return;
@@ -1031,7 +1044,7 @@ Status Double::runGame()
     auto res = new Status;
     //Initialize
     *signal = NEW_GAME;
-
+    *res = END_OF_THE_GAME;
 
     auto execute = [this](auto countdown, auto size, auto signal, auto res){
         while (true)
@@ -1082,12 +1095,12 @@ Status Double::runGame()
             // 4. check if the snake has eaten the food after movement
             // 5. check if the snake dies after the movement
 
-
             if (this->aPtrSnake->checkCollision())
             {
                 if (*signal == bEND_OF_THE_GAME)
                 {
                     *signal = END_OF_THE_GAME;
+                    return;
                 }
                 else
                 {
@@ -1114,6 +1127,7 @@ Status Double::runGame()
                 if (*signal == aEND_OF_THE_GAME)
                 {
                     *signal = END_OF_THE_GAME;
+                    return;
                 }
                 else
                 {
@@ -1185,6 +1199,7 @@ Status Double::runGame()
             std::this_thread::sleep_for(std::chrono::milliseconds(this->mDelay));
 
         }
+
     };
 
     std::thread th1(execute, countdown, size, signal, res);
@@ -1195,7 +1210,9 @@ Status Double::runGame()
     this->renderDifficulty();
 
     Status ans = *res;
+
     delete signal, countdown, size, res;
+
     return ans;
 
 }
@@ -1224,9 +1241,11 @@ void Game::startGame() {
                 }
                 play->initializeGame();
                 choice = play->runGame();
+
                 break;
             }
             case END_OF_THE_GAME: {
+
                 choice = play->renderMenu(END_OF_THE_GAME);
                 if (choice == ABNORMAL_EXIT) choice = MAIN_MENU;
                 break;

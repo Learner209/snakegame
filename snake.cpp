@@ -10,6 +10,7 @@
 #include <ncurses.h>
 #include "snake.h"
 
+#include <cassert>
 
 SnakeBody::SnakeBody()
 {
@@ -126,42 +127,132 @@ std::vector<SnakeBody>& Snake::getSnake()
 
 bool Snake::changeDirection(Direction newDirection)
 {
-    switch (this->mDirection)
+    if (manual)
     {
-        case Direction::Up:
+        switch (this->mDirection)
         {
-            // what you need to do when the current direction of the snake is Up
-            // and the user inputs a new direction?  TODO
-            if (newDirection == Direction::Left) this->mDirection = Direction::Left;
-            else if (newDirection == Direction::Right) this->mDirection = Direction::Right;
-            break;
+            case Direction::Up:
+            {
+                if (newDirection == Direction::Left) this->mDirection = Direction::Left;
+                else if (newDirection == Direction::Right) this->mDirection = Direction::Right;
+                return true;
+            }
+            case Direction::Down:
+            {
+                if (newDirection == Direction::Left) this->mDirection = Direction::Left;
+                else if (newDirection == Direction::Right) this->mDirection = Direction::Right;
+                return true;
+            }
+            case Direction::Left:
+            {
+                if (newDirection == Direction::Up) this->mDirection = Direction::Up;
+                else if (newDirection == Direction::Down) this->mDirection = Direction::Down;
+                return true;
+            }
+            case Direction::Right:
+            {
+                if (newDirection == Direction::Up) this->mDirection = Direction::Up;
+                else if (newDirection == Direction::Down) this->mDirection = Direction::Down;
+                return true;
+            }
         }
-        case Direction::Down:
-        {
-            // what you need to do when the current direction of the snake is Down
-            // and the user inputs a new direction? TODO
-            if (newDirection == Direction::Left) this->mDirection = Direction::Left;
-            else if (newDirection == Direction::Right) this->mDirection = Direction::Right;
-            break;
-        }
-        case Direction::Left:
-        {
-            // what you need to do when the current direction of the snake is Left
-            // and the user inputs a new direction? TODO
-            if (newDirection == Direction::Up) this->mDirection = Direction::Up;
-            else if (newDirection == Direction::Down) this->mDirection = Direction::Down;
-            break;
-        }
-        case Direction::Right:
-        {
-            // what you need to do when the current direction of the snake is Right
-            // and the user inputs a new direction? TODO
-            if (newDirection == Direction::Up) this->mDirection = Direction::Up;
-            else if (newDirection == Direction::Down) this->mDirection = Direction::Down;
-            break;
-        }
+        return true;
     }
-    return false;
+    else
+    {
+        int probability = this->randomInteger(0,10);
+        if (probability < 6) return true;
+        switch(this->mDirection)
+        {
+            case Direction::Up:
+            {
+                if ((this->mFood.getY() == this->mSnake[0].getY() + 1 || this->mFood.getY() == this->mSnake[0].getY() - 1 ) && probability < 3)
+                {
+                    return true;
+                }
+                else if ((this->mFood.getY() > this->mSnake[0].getY() && probability < 2)
+                         || (this->mFood.getY() == this->mSnake[0].getY() && probability < 7)
+                         || (this->mFood.getY() < this->mSnake[0].getY() && probability < 9))
+                {
+                    if (this->mFood.getX() > this->mSnake[0].getX())
+                    {
+                        this->mDirection = Direction::Right;
+                    }
+                    else
+                    {
+                        this->mDirection = Direction::Left;
+                    }
+                }
+                return true;
+            }
+            case Direction::Down :
+            {
+                if ((this->mFood.getY() == this->mSnake[0].getY() + 1 || this->mFood.getY() == this->mSnake[0].getY() - 1 ) && probability < 3)
+                {
+                    break;
+                }
+                else if ((this->mFood.getY() < this->mSnake[0].getY() && probability < 2)
+                         || (this->mFood.getY() == this->mSnake[0].getY() && probability < 7)
+                         || (this->mFood.getY() > this->mSnake[0].getY() && probability < 9))
+                {
+                    if (this->mFood.getX() > this->mSnake[0].getX())
+                    {
+                        this->mDirection = Direction::Right;
+                    }
+                    else
+                    {
+                        this->mDirection = Direction::Left;
+                    }
+                }
+                return true;
+            }
+            case Direction::Left:
+            {
+                if ((this->mFood.getX() == this->mSnake[0].getX() + 1 || this->mFood.getX() == this->mSnake[0].getX() - 1 ) && probability < 3)
+                {
+                    break;
+                }
+                else if ((this->mFood.getX() < this->mSnake[0].getX() && probability < 2)
+                         || (this->mFood.getX() == this->mSnake[0].getX() && probability < 7)
+                         || (this->mFood.getX() > this->mSnake[0].getX() && probability < 9))
+                {
+                    if (this->mFood.getY() > this->mSnake[0].getY())
+                    {
+                        this->mDirection = Direction::Up;
+                    }
+                    else
+                    {
+                        this->mDirection = Direction::Down;
+                    }
+                }
+                return true;
+            }
+            case Direction::Right:
+            {
+                if ((this->mFood.getX() == this->mSnake[0].getX() + 1 || this->mFood.getX() == this->mSnake[0].getX() - 1 ) && probability < 3)
+                {
+                    break;
+                }
+                else if ((this->mFood.getX() > this->mSnake[0].getX() && probability < 2)
+                         || (this->mFood.getX() == this->mSnake[0].getX() && probability < 7)
+                         || (this->mFood.getX() < this->mSnake[0].getX() && probability < 9))
+                {
+                    if (this->mFood.getY() > this->mSnake[0].getY())
+                    {
+                        this->mDirection = Direction::Up;
+                    }
+                    else
+                    {
+                        this->mDirection = Direction::Down;
+                    }
+                }
+                return true;
+            }
+        }
+        return true;
+    }
+    return true;
+
 }
 
 
@@ -239,4 +330,15 @@ void Snake::hasWalls(bool has_walls) {
 int Snake::getLength()
 {
     return this->mSnake.size();
+}
+
+void Snake::manualOrMachine(bool flag)
+{
+    this->manual = !flag;
+}
+
+
+int Snake::randomInteger(int low, int high)
+{
+    return low + rand() % (high - low);
 }

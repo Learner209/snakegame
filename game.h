@@ -17,8 +17,7 @@
 
 //Multi-thread
 #include <atomic>
-#include <mutex>
-#include <condition_variable>
+
 
 //Game Status
 enum Status{END_OF_THE_GAME,aEND_OF_THE_GAME, bEND_OF_THE_GAME, NEW_GAME, RESUME_GAME, PAUSE_GAME,
@@ -107,8 +106,7 @@ protected:
     //Participants
     static bool participants;
     //Multi-thread
-    std::mutex m;
-    std::condition_variable cond;
+
     //Terrain
     std::vector <std::string> Terrains = {"Plain"};
     int indexTerrain = 0;
@@ -145,6 +143,7 @@ public:
     bool controlSnake() const;
 protected:
 };
+
 
 class Double: public Game{
 public:
@@ -201,6 +200,6 @@ protected:
 
     int aDelay = 0;
     int bDelay = 0;
-
+    bool manToMachine = true;
 };
 #endif

@@ -49,14 +49,15 @@ public:
     bool hitSelf();
     bool checkCollision();
 
-    bool changeDirection(Direction newDirection);
+    virtual bool changeDirection(Direction newDirection = Direction::Up);
     std::vector<SnakeBody>& getSnake();
     int getLength();
     SnakeBody createNewHead();
     bool moveFoward();
     void hasWalls(bool);
+    void manualOrMachine(bool);
 
-private:
+protected:
     const int mGameBoardWidth;
     const int mGameBoardHeight;
     // Snake information
@@ -65,6 +66,10 @@ private:
     SnakeBody mFood;
     std::vector<SnakeBody> mSnake;
     bool has_walls;
+    bool manual = true;
+    //auxiliary function
+    int randomInteger(int low, int high);
 };
+
 
 #endif
