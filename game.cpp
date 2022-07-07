@@ -20,7 +20,7 @@
 bool Game::participants = false;
 bool Game::dynamic_difficulty = true;
 bool Game::has_walls = true;
-int Double::Difficulty = 7;
+int Double::Difficulty = 0;
 
 void init(){
     initscr();
@@ -792,8 +792,8 @@ void Solo::renderDifficulty() const
 
 inline void Double::renderDifficulty() const
 {
-    mvwprintw(this->mWindows[0], 1, 1, "%s", "Difficulty: ");
-    mvwprintw(this->mWindows[0], 1, 13, "%s", std::to_string(Double::Difficulty).c_str());
+    mvwprintw(this->mWindows[0], 1, 1, "%s", "Speed: ");
+    mvwprintw(this->mWindows[0], 1, 8, "%s", std::to_string(Double::Difficulty).c_str());
 }
 
 
@@ -1016,7 +1016,7 @@ void Game::adjustDelay()
 
 void Double::adjustDelay()
 {
-    this->mDelay = this->mBaseDelay * pow(0.75, Double::Difficulty);
+    this->mDelay = this->mBaseDelay * pow(0.8, Double::Difficulty);
 }
 
 void Solo::initializeGame()

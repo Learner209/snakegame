@@ -73,6 +73,7 @@ protected:
     int randomInteger(int low, int high) const;
     bool toHitWall() const;
     bool toHitSelf() const;
+    void circuitCheck();
 };
 
 

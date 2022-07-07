@@ -138,6 +138,150 @@ bool Snake::toHitSelf() const
     return false;
 }
 
+
+void Snake::circuitCheck()
+{
+    SnakeBody newHead = this->createNewHead();
+    SnakeBody head = this->mSnake[0];
+    switch(this->mDirection){
+        case Direction::Up:
+        {
+            if (this->isPartOfSnake(head.getX(), head.getY() - 1) != -1)
+            {
+                int index = this->isPartOfSnake(head.getX(), head.getY() - 1);
+                if (this->mSnake[index - 1].getX() < head.getX())
+                {
+                    this->mDirection = Direction::Right;
+                    return;
+                }
+                this->mDirection = Direction::Left;
+                return;
+            }
+            if (this->isPartOfSnake(newHead.getX(), newHead.getY() - 1) != -1)
+            {
+                int index = this->isPartOfSnake(newHead.getX(), newHead.getY() - 1);
+                if (this->mSnake[index - 1].getX() < newHead.getX())
+                {
+                    this->mDirection = Direction::Right;
+                    return;
+                }
+                this->mDirection = Direction::Left;
+                return;
+            }
+            if (this->isPartOfSnake(newHead.getX() - 1, newHead.getY()) != -1
+                && this->isPartOfSnake(newHead.getX() + 1, newHead.getY()) != -1)
+            {
+               int lp = this->isPartOfSnake(newHead.getX() - 1, newHead.getY());
+               int rp = this->isPartOfSnake(newHead.getX() + 1, newHead.getY());
+                this->mDirection = (lp > rp)? Direction::Left: Direction::Right;
+            }
+            return;
+        }
+        case Direction::Down:
+        {
+            if (this->isPartOfSnake(head.getX(), head.getY() + 1) != -1)
+            {
+                int index = this->isPartOfSnake(head.getX(), head.getY() + 1);
+                if (this->mSnake[index - 1].getX() < head.getX())
+                {
+                    this->mDirection = Direction::Right;
+                    return;
+                }
+                this->mDirection = Direction::Left;
+                return;
+            }
+            if (this->isPartOfSnake(newHead.getX(), newHead.getY() + 1) != -1)
+            {
+                int index = this->isPartOfSnake(newHead.getX(), newHead.getY() + 1);
+                if (this->mSnake[index - 1].getX() < newHead.getX())
+                {
+                    this->mDirection = Direction::Right;
+                    return;
+                }
+                this->mDirection = Direction::Left;
+                return;
+            }
+
+            if (this->isPartOfSnake(newHead.getX() - 1, newHead.getY()) != -1
+                && this->isPartOfSnake(newHead.getX() + 1, newHead.getY()) != -1)
+            {
+                int lp = this->isPartOfSnake(newHead.getX() - 1, newHead.getY());
+                int rp = this->isPartOfSnake(newHead.getX() + 1, newHead.getY());
+                this->mDirection = (lp > rp)? Direction::Left: Direction::Right;
+            }
+            return;
+        }
+        case Direction::Left:
+        {
+            if (this->isPartOfSnake(head.getX() - 1, head.getY()) != -1)
+            {
+                int index = this->isPartOfSnake(head.getX() - 1, head.getY());
+                if (this->mSnake[index - 1].getY() < head.getY())
+                {
+                    this->mDirection = Direction::Down;
+                    return;
+                }
+                this->mDirection = Direction::Up;
+                return;
+            }
+            if (this->isPartOfSnake(newHead.getX() - 1, newHead.getY()) != -1)
+            {
+                int index = this->isPartOfSnake(newHead.getX() - 1, newHead.getY());
+                if (this->mSnake[index - 1].getY() < newHead.getY())
+                {
+                    this->mDirection = Direction::Down;
+                    return;
+                }
+                this->mDirection = Direction::Up;
+                return;
+            }
+            if (this->isPartOfSnake(newHead.getX(), newHead.getY() - 1) != -1
+                && this->isPartOfSnake(newHead.getX(), newHead.getY() + 1) != -1)
+            {
+                int up = this->isPartOfSnake(newHead.getX(), newHead.getY() - 1);
+                int dp = this->isPartOfSnake(newHead.getX(), newHead.getY() + 1);
+                this->mDirection = (up > dp)? Direction::Up: Direction::Down;
+            }
+            return;
+        }
+        case Direction::Right:
+        {
+            if (this->isPartOfSnake(head.getX() + 1, head.getY()) != -1)
+            {
+                int index = this->isPartOfSnake(head.getX() + 1, head.getY());
+                if (this->mSnake[index - 1].getY() < head.getY())
+                {
+                    this->mDirection = Direction::Down;
+                    return;
+                }
+                this->mDirection = Direction::Up;
+                return;
+            }
+            if (this->isPartOfSnake(newHead.getX() + 1, newHead.getY()) != -1)
+            {
+                int index = this->isPartOfSnake(newHead.getX() + 1, newHead.getY());
+                if (this->mSnake[index - 1].getY() < newHead.getY())
+                {
+                    this->mDirection = Direction::Down;
+                    return;
+                }
+                this->mDirection = Direction::Up;
+                return;
+            }
+            if (this->isPartOfSnake(newHead.getX(), newHead.getY() - 1) != -1
+                && this->isPartOfSnake(newHead.getX() , newHead.getY() + 1) != -1)
+            {
+                int up = this->isPartOfSnake(newHead.getX(), newHead.getY() - 1);
+                int dp = this->isPartOfSnake(newHead.getX(), newHead.getY() + 1);
+                this->mDirection = (up > dp)? Direction::Up: Direction::Down;
+            }
+            return;
+        }
+    }
+    return;
+
+}
+
 void Snake::senseFood(SnakeBody food)
 {
     this->mFood = food;
@@ -215,17 +359,9 @@ void Snake::simulateDirection(int difficulty, int delay) {
                 this->mDirection = (probability < 10)? Direction::Left : Direction::Right;
                 return;
             }
-            if (this->toHitSelf())
-            {
-                int index = this->isPartOfSnake(head.getX(), head.getY() - 1);
-                if (this->mSnake[index - 1].getX() < head.getX())
-                {
-                    this->mDirection = Direction::Right;
-                    return;
-                }
-                this->mDirection = Direction::Left;
-                return;
-            }
+
+            this->circuitCheck();
+
             if (this->isPartOfSnake(head.getX() - 1, head.getY()) != -1
                 || this->isPartOfSnake(head.getX() + 1, head.getY()) != -1)
             {
@@ -289,17 +425,9 @@ void Snake::simulateDirection(int difficulty, int delay) {
                 this->mDirection = (probability < 10)? Direction::Left : Direction::Right;
                 return;
             }
-            if (this->toHitSelf())
-            {
-                int index = this->isPartOfSnake(head.getX(), head.getY() + 1);
-                if (this->mSnake[index - 1].getX() < head.getX())
-                {
-                    this->mDirection = Direction::Right;
-                    return;
-                }
-                this->mDirection = Direction::Left;
-                return;
-            }
+
+            this->circuitCheck();
+
             if (this->isPartOfSnake(head.getX() - 1, head.getY()) != -1
                  || this->isPartOfSnake(head.getX() + 1, head.getY()) != -1)
             {
@@ -363,17 +491,9 @@ void Snake::simulateDirection(int difficulty, int delay) {
                 this->mDirection = (probability < 10)? Direction::Up : Direction::Down;
                 return;
             }
-            if (this->toHitSelf())
-            {
-                int index = this->isPartOfSnake(head.getX() - 1, head.getY());
-                if (this->mSnake[index - 1].getY() < head.getY())
-                {
-                    this->mDirection = Direction::Down;
-                    return;
-                }
-                this->mDirection = Direction::Up;
-                return;
-            }
+
+            this->circuitCheck();
+
             if (this->isPartOfSnake(head.getX(), head.getY() - 1) != -1
                 || this->isPartOfSnake(head.getX(), head.getY() + 1) != -1)
             {
@@ -436,17 +556,9 @@ void Snake::simulateDirection(int difficulty, int delay) {
                 }
                 this->mDirection = (probability < 10)? Direction::Up : Direction::Down;
             }
-            if (this->toHitSelf())
-            {
-                int index = this->isPartOfSnake(head.getX() + 1, head.getY());
-                if (this->mSnake[index - 1].getY() < head.getY())
-                {
-                    this->mDirection = Direction::Down;
-                    return;
-                }
-                this->mDirection = Direction::Up;
-                return;
-            }
+
+            this->circuitCheck();
+
             if (this->isPartOfSnake(head.getX(), head.getY() - 1) != -1
                 || this->isPartOfSnake(head.getX(), head.getY() + 1) != -1)
             {
