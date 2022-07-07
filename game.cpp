@@ -255,7 +255,6 @@ Status Game::renderMenu(Status status, int delay)
             werase(mWindows[i]);
             wnoutrefresh(mWindows[i]);
         }
-
         doupdate();
         mvwprintw(menu, height * (1 - 0.8), (width - 24) / 2, "Welcome to the Snake Game!");
         menuItems.insert(menuItems.begin() + 1, "Mode");
