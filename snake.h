@@ -41,7 +41,7 @@ public:
     // Initialize snake
     void initializeSnake();
     // Checking API for generating random food
-    bool isPartOfSnake(int x, int y);
+    int isPartOfSnake(int x, int y);
     void senseFood(SnakeBody food);
     bool touchFood();
     // Check if the snake is dead

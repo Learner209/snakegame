@@ -20,7 +20,7 @@
 bool Game::participants = false;
 bool Game::dynamic_difficulty = true;
 bool Game::has_walls = true;
-int Double::Difficulty = 0;
+int Double::Difficulty = 7;
 
 void init(){
     initscr();
@@ -527,10 +527,7 @@ void Double::renderSettings()
     float axis_y = (this->manToMachine) ? (this->mScreenHeight * 0.618 - 10) / 2 : (this->mScreenHeight * 0.618 - 8) / 2;
     float axis_x = (this->mScreenWidth * 0.618 - 12) / 2;
     std:std::vector<std::string> settings = {"Speed:", "Countdown", "Has walls:", "Man to ?:"};
-    if (this->manToMachine)
-    {
-        settings.push_back("Difficulty:");
-    }
+
     while(true) {
 
         std::string mDifficulty = std::to_string(Double::Difficulty);
@@ -539,6 +536,12 @@ void Double::renderSettings()
                      std::to_string(this->mCountdown - this->mCountdown / 60 * 60);
         std::string has_walls = (Game::has_walls) ? "ON" : "OFF";
         std::string manToMachine = (this->manToMachine) ? "Man to Computer": "Man to Man";
+
+        if (this->manToMachine)
+        {
+            settings.push_back("Difficulty:");
+        }
+
         if (this->manToMachine)
         {
             std::string smartness;
@@ -772,15 +775,12 @@ void Solo::renderPoints() const
     wrefresh(this->mWindows[2]);
 }
 
-void Double::renderPoints() const 
+inline void Double::renderPoints() const
 {
-    std::string aPointsString = std::to_string(this->aPoints);
-    std::string bPointsString = std::to_string(this->bPoints);
     mvwprintw(this->mWindows[0], 2, 1, "%s", "Points: ");
-    mvwprintw(this->mWindows[0], 2, 9, "%s", aPointsString.c_str());
+    mvwprintw(this->mWindows[0], 2, 9, "%s", std::to_string(this->aPoints).c_str());
     mvwprintw(this->mWindows[0], 2, mScreenWidth - 2 - 9, "%s", "Points: ");
-    mvwprintw(this->mWindows[0], 2, mScreenWidth - 3, "%s", bPointsString.c_str());
-    wrefresh(this->mWindows[0]);
+    mvwprintw(this->mWindows[0], 2, mScreenWidth - 3, "%s", std::to_string(this->bPoints).c_str());
 }
 
 void Solo::renderDifficulty() const
@@ -790,12 +790,10 @@ void Solo::renderDifficulty() const
     wrefresh(this->mWindows[2]);
 }
 
-void Double::renderDifficulty() const
+inline void Double::renderDifficulty() const
 {
-    std::string DifficultyString = std::to_string(Double::Difficulty);
     mvwprintw(this->mWindows[0], 1, 1, "%s", "Difficulty: ");
-    mvwprintw(this->mWindows[0], 1, 13, "%s", DifficultyString.c_str());
-    wrefresh(this->mWindows[0]);
+    mvwprintw(this->mWindows[0], 1, 13, "%s", std::to_string(Double::Difficulty).c_str());
 }
 
 
@@ -807,7 +805,7 @@ SnakeBody Game::createRandomFood()
     do{
         width = rand() % (this->mGameBoardWidth - 2) + 1;
         height = rand() % (this->mGameBoardHeight - 2) + 1;
-    }while(mPtrSnake->isPartOfSnake(width, height));
+    }while(mPtrSnake->isPartOfSnake(width, height) != -1);
     SnakeBody food(width, height);
     return food;
 }
@@ -820,7 +818,7 @@ SnakeBody Double::createRandomFood()
     do{
         width = rand() % (this->mGameBoardWidth - 2) + 1;
         height = rand() % (this->mGameBoardHeight - 2) + 1;
-    }while(aPtrSnake->isPartOfSnake(width, height));
+    }while(aPtrSnake->isPartOfSnake(width, height) != -1);
     SnakeBody food(width, height);
     return food;
 }
@@ -1123,7 +1121,6 @@ inline void Double::renderCountdown(std::string * countdown, std::atomic_int * s
             tmp -= interval;
             *size -= 1;
         }
-
         if (*signal == END_OF_THE_GAME)
         {
             return;
@@ -1165,25 +1162,26 @@ Status Double::runGame()
             }
             bool aMoveSuccess = false, bMoveSuccess = false;
             // 2. clear the window
-            werase(this->mWindows[0]);
             if (*signal == aEND_OF_THE_GAME)
             {
                 werase(this->mWindows[2]);
+                box(this->mWindows[2], 0, 0);
             }
             else if (*signal == bEND_OF_THE_GAME)
             {
                 werase(this->mWindows[1]);
+                box(this->mWindows[1], 0, 0);
             }
             else
             {
                 werase(this->mWindows[1]);
+                box(this->mWindows[1], 0, 0);
                 werase(this->mWindows[2]);
+                box(this->mWindows[2], 0, 0);
             }
-            for (int i = 0; i < mWindows.size(); i++)
-            {
-                box(this->mWindows[i], 0, 0);
-                wnoutrefresh(this->mWindows[i]);
-            }
+            werase(this->mWindows[0]);
+            box(this->mWindows[0], 0, 0);
+
             // 3. move the current snake forward
             if (*signal != aEND_OF_THE_GAME && this->aPtrSnake->moveFoward()) aMoveSuccess = true;
             if (*signal != bEND_OF_THE_GAME && this->bPtrSnake->moveFoward()) bMoveSuccess = true;
@@ -1253,7 +1251,6 @@ Status Double::runGame()
                 this->bFood = this->createRandomFood();
                 this->bPtrSnake->senseFood(this->bFood);
             }
-
             // 8. render the position of the food and snake in the new frame of window.
             if (*signal == END_OF_THE_GAME)
             {
@@ -1279,6 +1276,7 @@ Status Double::runGame()
                 this->renderSnake(this->aPtrSnake, this->mWindows[1]);
                 doupdate();
             }
+
             //  render the countdown
             //  update other game states and refresh the window
             mvwprintw(this->mWindows[0], 1, (mScreenWidth - 4) / 2, "TIME");
@@ -1289,6 +1287,9 @@ Status Double::runGame()
             }
             this->renderPoints();
             this->renderDifficulty();
+            wnoutrefresh(this->mWindows[0]);
+            doupdate();
+
             if (aMoveSuccess) this->aPoints++;
             if (bMoveSuccess) this->bPoints++;
             std::this_thread::sleep_for(std::chrono::milliseconds(this->mDelay));

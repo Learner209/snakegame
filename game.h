@@ -193,7 +193,7 @@ protected:
     int aPoints = 0;
     int bPoints = 0;
 
-    int mCountdown = 60;
+    int mCountdown = 30;
 
     SnakeBody aFood;
     SnakeBody bFood;
