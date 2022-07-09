@@ -33,7 +33,7 @@ class Snake
 {
 public:
     //Snake();
-    Snake(int gameBoardWidth, int gameBoardHeight, int initialSnakeLength, terrain Terrain = Plain);
+    Snake(int gameBoardWidth, int gameBoardHeight, int initialSnakeLength, terrain Terrain = Plain, int difficulty = 0);
     // Set random seed
     void setRandomSeed();
     // Initialize snake

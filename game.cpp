@@ -707,7 +707,7 @@ void Game::renderMode()
 {
     int choice = 0;
 
-    std::vector<std::string> modes = {"Terrains:", "Participants:"};
+    std::vector<std::string> modes = {"Terrains:", "Participants:", "Terrain Difficulty"};
     float startX = this->mScreenWidth * (1 - 0.618) / 2;
     float startY = this->mScreenHeight * (1 - 0.618) / 2;
     WINDOW * mode = newwin(this->mScreenHeight * 0.618, this->mScreenWidth * 0.618, startY, startX);
@@ -749,9 +749,14 @@ void Game::renderMode()
                 break;
             }
         }
-        mvwprintw(mode, axis_y + 1, axis_x, "%s", terrain.c_str());
+
         std::string participants = (Game::participants) ? "SOLO" : "DOUBLE";
+        std::vector<std::string> terrainVector = {"Easy", "Medium", "Hard"};
+
+
+        mvwprintw(mode, axis_y + 1, axis_x, "%s", terrain.c_str());
         mvwprintw(mode, axis_y + 3, axis_x, "%s", participants.c_str());
+        mvwprintw(mode, axis_y + 5, axis_x, "%s", terrainVector[this->mTerrainDifficulty].c_str());
         wnoutrefresh(mode);
 
         choice = this->menuSelect(mode, modes, axis_y, axis_x, 2, 0);
@@ -764,7 +769,67 @@ void Game::renderMode()
         }
         if (choice == 0)
         {
-            break;
+            int height = (mScreenHeight - 9) / 2, width = (mScreenWidth - 20) / 2;
+            WINDOW *modeWin = newwin(9, 20, height, width);
+            box(modeWin, 0, 0);
+            std::vector<std::string> terrains = {"Plain", "Water", "Mountain", "Forest", "Maze"};
+            switch (this->Terrains[this->indexTerrain]) {
+                case terrain::Plain:
+                {
+                    choice = this->menuSelect(modeWin, terrains, 2, 6, 1, 0);
+                    break;
+                }
+                case terrain::Water:
+                {
+                    choice = this->menuSelect(modeWin, terrains, 2, 6, 1, 1);
+                    break;
+                }
+                case terrain::Mountain:
+                {
+                    choice = this->menuSelect(modeWin, terrains, 2, 6, 1, 2);
+                    break;
+                }
+                case terrain::Forest:
+                {
+                    choice = this->menuSelect(modeWin, terrains, 2, 6, 1, 3);
+                    break;
+                }
+                case terrain::Maze:
+                {
+                    choice = this->menuSelect(modeWin, terrains, 2, 6, 1, 4);
+                    break;
+                }
+            }
+            switch (choice) {
+                case 0:
+                {
+                    this->indexTerrain = 0;
+                    break;
+                }
+                case 1:
+                {
+                    this->indexTerrain = 1;
+                    break;
+                }
+                case 2:
+                {
+                    this->indexTerrain = 2;
+                    break;
+                }
+                case 3:
+                {
+                    this->indexTerrain = 3;
+                    break;
+                }
+                case 4:
+                {
+                    this->indexTerrain = 4;
+                    break;
+                }
+            }
+            werase(modeWin);
+            wrefresh(modeWin);
+            delwin(modeWin);
         }
         else if (choice == 1)
         {
@@ -784,7 +849,33 @@ void Game::renderMode()
             if (choice) Game::participants = false;
             else Game::participants = true;
         }
-
+        else if (choice == 2)
+        {
+            int height = (mScreenHeight - 7) / 2, width = (mScreenWidth - 20) / 2;
+            WINDOW *modeWin = newwin(7, 20, height, width);
+            box(modeWin, 0, 0);
+            switch (this->mTerrainDifficulty){
+                case 0:
+                {
+                    choice = this->menuSelect(modeWin, terrainVector, 2, 2, 1, 0);
+                    break;
+                }
+                case 1:
+                {
+                    choice = this->menuSelect(modeWin, terrainVector, 2, 2, 1, 1);
+                    break;
+                }
+                case 2:
+                {
+                    choice = this->menuSelect(modeWin, terrainVector, 2, 2, 1, 2);
+                    break;
+                }
+            }
+            this->mTerrainDifficulty = choice;
+            werase(modeWin);
+            wrefresh(modeWin);
+            delwin(modeWin);
+        }
     }
     werase(mode);
     wrefresh(mode);
@@ -1088,6 +1179,10 @@ void Game::adjustDelay()
     {
         this->mDelay = this->mBaseDelay * pow(0.75, this->mDifficulty);
     }
+}
+
+void Game::adjustTerrainDelay()
+{
     if (this->mPtrSnake->mTerrain->getattr() == Forest)
     {
         SnakeBody head = this->mPtrSnake->getSnake()[0];
@@ -1095,10 +1190,6 @@ void Game::adjustDelay()
         if (this->mPtrSnake->mTerrain->inVector(this->mPtrSnake->mTerrain->getTerrains(), block))
         {
             this->mDelay *= 2;
-        }
-        else
-        {
-            this->mDelay = this->mBaseDelay * pow(0.75, this->mDifficulty);
         }
     }
 }
@@ -1124,7 +1215,7 @@ void Double::adjustDelay()
 void Solo::initializeGame()
 {
     //0.allocate memory for a new snake
-    this->mPtrSnake.reset(new Snake(this->mGameBoardWidth, this->mGameBoardHeight, this->mInitialSnakeLength, this->Terrains[indexTerrain]));
+    this->mPtrSnake.reset(new Snake(this->mGameBoardWidth, this->mGameBoardHeight, this->mInitialSnakeLength, this->Terrains[indexTerrain], this->mTerrainDifficulty));
     //1.initialize the game points as zero
     this->mPoints = 0;
     //2. create a food at random place
@@ -1142,8 +1233,8 @@ void Solo::initializeGame()
 void Double::initializeGame()
 {
     //0.allocate memory for a new snake
-    this->aPtrSnake.reset(new Snake(this->mGameBoardWidth, this->mGameBoardHeight, this->mInitialSnakeLength));
-    this->bPtrSnake.reset(new Snake(this->mGameBoardWidth, this->mGameBoardHeight, this->mInitialSnakeLength));
+    this->aPtrSnake.reset(new Snake(this->mGameBoardWidth, this->mGameBoardHeight, this->mInitialSnakeLength, this->Terrains[indexTerrain], this->mTerrainDifficulty));
+    this->bPtrSnake.reset(new Snake(this->mGameBoardWidth, this->mGameBoardHeight, this->mInitialSnakeLength, this->Terrains[indexTerrain], this->mTerrainDifficulty));
     //1.initialize the game points as zero
     this->aPoints = 0;
     this->bPoints = 0;
@@ -1169,43 +1260,174 @@ Status Solo::runGame()
 {
     bool moveSuccess;
     int key = 0;
-    while (true)
-    {
-         // 1. process your keyboard input
-            if (!this->controlSnake()) return PAUSE_GAME;
-         // 2. clear the window
-            werase(mWindows[1]);
-            box(mWindows[1], 0, 0);
-         // 3. move the current snake forward
-            moveSuccess = false;
-            if (this->mPtrSnake->moveFoward())
+
+    auto countdown = new std::string;
+    auto size = new std::atomic_int;
+    auto signal = new Status;
+    auto res = new Status;
+    //Initialize
+    *signal = NEW_GAME;
+    *res = END_OF_THE_GAME;
+
+    auto execute = [this](auto countdown, auto size, auto signal, auto res){
+        while (true)
+        {
+            // 1. process your keyboard input
+            if (!this->controlSnake())
             {
-                moveSuccess = true;
+                *res = *signal;
+                *signal = PAUSE_GAME; // To hinder renderCountDown
+                Status choice = this->renderMenu(RESUME_GAME);
+                if (choice == ABNORMAL_EXIT || choice == RESUME_GAME)
+                {
+                    *signal = *res;
+                }
+                else
+                {
+                    *signal = END_OF_THE_GAME;
+                    *res = choice;
+                    return;
+                }
             }
-         // 4. check if the snake has eaten the food after movement
-         // 5. check if the snake dies after the movement
+            bool MoveSuccess = false;
+            // 2. clear the window
+            werase(this->mWindows[1]);
+            box(this->mWindows[1], 0, 0);
+            werase(this->mWindows[0]);
+            box(this->mWindows[0], 0, 0);
+            // 3. move the current snake forward
+            if (this->mPtrSnake->moveFoward()) MoveSuccess = true;
+            // 4. check if the snake has eaten the food after movement
+            // 5. check if the snake dies after the movement
             if (this->mPtrSnake->checkCollision())
             {
-                return END_OF_THE_GAME;
+              *signal = END_OF_THE_GAME;
+              return;
             }
-         // 6. make corresponding steps for the ``if conditions'' in 3 and 4.
-            if (moveSuccess){
+            // 6. make corresponding steps for the ``if conditions'' in 3 and 4.
+            if (MoveSuccess){
                 this->mFood = this->createRandomFood();
                 this->mPtrSnake->senseFood(this->mFood);
-                this->mPoints++;
             }
-         // 7. render the position of the food and snake in the new frame of window.
+            // 8. render the position of the food and snake in the new frame of window.
             this->renderTerrain();
             this->renderFood();
             this->renderSnake();
-            doupdate();
-         // 8. update other game states and refresh the window
+            //  render the countdown
+            //  update other game states and refresh the window
+            mvwprintw(this->mWindows[0], 1, 1, "Welcome to the Snake game!");
+            if (this->mPtrSnake->mTerrain->getattr() == Water)
+            {
+                SnakeBody head = this->mPtrSnake->getSnake()[0];
+                auto block = std::make_pair(head.getX(), head.getY());
+                if (this->mPtrSnake->mTerrain->inVector(this->mPtrSnake->mTerrain->getTerrains(), block))
+                {
+                    if (*signal == END_OF_THE_GAME)
+                    {
+                        return;
+                    }
+                    *signal = DROWNING;
+                    mvwprintw(this->mWindows[0], 2, 1, "Drowning:");
+                    mvwprintw(this->mWindows[0], 2, (this->mScreenWidth - 1 - 5), "%s", countdown->c_str());
+                    for (int i = 0; i < *size; i++)
+                    {
+                        mvwaddch(this->mWindows[0], 2, i + 1 + 9, ACS_CKBOARD);
+                    }
+                }
+                else
+                {
+                    *signal = RESUME_GAME;
+                }
+            }
             this->renderPoints();
             this->renderDifficulty();
-            std::this_thread::sleep_for(std::chrono::milliseconds(this->mDelay));
-            if (Game::dynamic_difficulty) this->adjustDelay();
+            for(int i = 0; i < this->mWindows.size(); i++)
+            {
+                wnoutrefresh(this->mWindows[i]);
+            }
+            doupdate();
 
+            if (MoveSuccess) this->mPoints++;
+            if (Game::dynamic_difficulty) this->adjustDelay();
+            this->adjustTerrainDelay();
+            std::this_thread::sleep_for(std::chrono::milliseconds(this->mDelay));
+        }
+    };
+
+    std::thread th1(execute, countdown, size, signal, res);
+    std::thread th2(&Solo::calculateDrowning, this, countdown, size, signal);
+    th2.join();
+    th1.join();
+    this->renderPoints();
+    this->renderDifficulty();
+
+    Status ans = *res;
+
+    delete signal, countdown, size, res;
+
+    return ans;
+}
+
+inline void Solo::calculateDrowning(std::string * countdown, std::atomic_int * size, Status * signal)
+{
+    long double tmp = this->mDrowningTime * 1000;
+    long double interval = (this->mDrowningTime * 1000) / (mScreenWidth - 2 - 9 - 5);
+    *size = mScreenWidth - 2 - 9 - 5;
+    int duration = interval;
+
+    while(tmp > 0)
+    {
+        if (*signal != DROWNING)
+        {
+            tmp = this->mDrowningTime * 1000;
+            interval = (this->mDrowningTime * 1000) / (mScreenWidth - 2 - 9 - 5);
+            *size = mScreenWidth - 2 - 9 - 5;
+            duration = interval;
+        }
+        else
+        {
+            *countdown = "00:" + ((int(tmp / 1000) < 10) ? "0" + std::to_string(int(tmp / 1000)) : std::to_string(int(tmp / 1000)));
+            tmp -= interval;
+            *size -= 1;
+        }
+        if (*signal == END_OF_THE_GAME)
+        {
+            return;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(duration));
     }
+    *signal = END_OF_THE_GAME;
+}
+
+inline void Double::calculateDrowning(std::string * countdown, std::atomic_int * size, Status * signal)
+{
+    long double tmp = this->mCountdown * 1000;
+    long double interval = (this->mCountdown * 1000) / (mScreenWidth - 2);
+    *size = mScreenWidth - 2;
+    int duration = interval;
+
+    while(tmp > 0)
+    {
+        if (*signal == DROWNING)
+        {
+            tmp = this->mCountdown * 1000;
+            interval = (this->mCountdown * 1000) / (mScreenWidth - 2);
+            *size = mScreenWidth - 2;
+        }
+        if (*signal != DROWNING)
+        {
+            tmp = this->mDrowningTime * 1000;
+            interval = (this->mDrowningTime * 1000) / (mScreenWidth - 2 - 9 - 5);
+            *size = mScreenWidth - 2 - 9 - 5;
+            duration = interval;
+        }
+        if (*signal == END_OF_THE_GAME)
+        {
+            return;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(duration));
+    }
+    *signal = END_OF_THE_GAME;
 }
 
 inline void Double::renderCountdown(std::string * countdown, std::atomic_int * size, Status * signal)
@@ -1380,7 +1602,43 @@ Status Double::runGame()
                 this->renderSnake(this->aPtrSnake, this->mWindows[1]);
                 doupdate();
             }
-
+            if (this->aPtrSnake->mTerrain->getattr() == Water)
+            {
+                SnakeBody head = this->aPtrSnake->getSnake()[0];
+                auto block = std::make_pair(head.getX(), head.getY());
+                if (this->aPtrSnake->mTerrain->inVector(this->aPtrSnake->mTerrain->getTerrains(), block))
+                {
+                    if (*signal == END_OF_THE_GAME)
+                    {
+                        return;
+                    }
+                    *signal = aDROWNING;
+                    mvwprintw(this->mWindows[0], 4, 1, "Drowning:");
+                    mvwprintw(this->mWindows[0], 4, (this->mScreenWidth - 1 - 5), "%s", countdown->c_str());
+                    for (int i = 0; i < *size; i++)
+                    {
+                        mvwaddch(this->mWindows[0], 4, i + 1 + 9, ACS_CKBOARD);
+                    }
+                }
+                else if (this->bPtrSnake->mTerrain->inVector(this->bPtrSnake->mTerrain->getTerrains(), block))
+                {
+                    if (*signal == END_OF_THE_GAME)
+                    {
+                        return;
+                    }
+                    *signal = bDROWNING;
+                    mvwprintw(this->mWindows[0], 5, 1, "Drowning:");
+                    mvwprintw(this->mWindows[0], 5, (this->mScreenWidth - 1 - 5), "%s", countdown->c_str());
+                    for (int i = 0; i < *size; i++)
+                    {
+                        mvwaddch(this->mWindows[0], 4, i + 1 + 9, ACS_CKBOARD);
+                    }
+                }
+                else
+                {
+                    *signal = RESUME_GAME;
+                }
+            }
             //  render the countdown
             //  update other game states and refresh the window
             mvwprintw(this->mWindows[0], 1, (mScreenWidth - 4) / 2, "TIME");

@@ -116,8 +116,8 @@ terrain Terrain::getattr() const
 
 bool Terrain::inBounds(Block block) const
 {
-    return (block.first > 0 && block.first < this->mGameBoardWidth - 1
-            && block.second > 0 && this->mGameBoardHeight - 1);
+    return (block.first > 0 && block.first < this->mGameBoardWidth - 2
+            && block.second > 0 && this->mGameBoardHeight - 2);
 }
 
 bool Terrain::inVector(std::vector<Block> Terrains, Block block) const

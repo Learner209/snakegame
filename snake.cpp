@@ -37,12 +37,12 @@ bool SnakeBody::operator == (const SnakeBody& snakeBody)
     return (this->getX() == snakeBody.getX() && this->getY() == snakeBody.getY());
 }
 
-Snake::Snake(int gameBoardWidth, int gameBoardHeight, int initialSnakeLength, terrain map): mGameBoardWidth(gameBoardWidth), mGameBoardHeight(gameBoardHeight), mInitialSnakeLength(initialSnakeLength)
+Snake::Snake(int gameBoardWidth, int gameBoardHeight, int initialSnakeLength, terrain map, int difficulty): mGameBoardWidth(gameBoardWidth), mGameBoardHeight(gameBoardHeight), mInitialSnakeLength(initialSnakeLength)
 {
     this->initializeSnake();
     this->setRandomSeed();
     this->mTerrain.reset(new Terrain(gameBoardWidth, gameBoardHeight, map));
-    this->mTerrain->initializeTerrain(0);
+    this->mTerrain->initializeTerrain(difficulty);
 }
 
 void Snake::setRandomSeed()
