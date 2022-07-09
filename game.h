@@ -1,7 +1,3 @@
-//
-// Created by bitch on 6/29/22.
-//
-
 #ifndef GAME_H
 #define GAME_H
 
@@ -61,6 +57,7 @@ public:
 
     virtual void renderFood() const { return; };
     virtual void renderSnake() const { return; };
+    virtual void renderTerrain() const {return; };
     virtual bool controlSnake() const { return true; };
 
     void startGame();
@@ -98,7 +95,7 @@ protected:
     static bool has_walls;
     int mBaseDelay = 100;
     int mDelay;
-    const std::string mRecordBoardFilePath = "record.txt";
+    const std::string mRecordBoardFilePath = "record.dat";
     std::vector<int> mLeaderBoard;
     const int mNumLeaders = 3;
     //Mouse
@@ -108,8 +105,8 @@ protected:
     //Multi-thread
 
     //Terrain
-    std::vector <std::string> Terrains = {"Plain"};
-    int indexTerrain = 0;
+    std::vector <terrain> Terrains = {Plain, Water, Mountain, Forest, Maze};
+    int indexTerrain = 3;
     //Auxiliary: Menu Select
     int menuSelect(WINDOW *menu, std::vector <std::string> lists, int axis_y, int axis_x, int whitespace, int init,
                    bool direction = 1);
@@ -135,6 +132,7 @@ public:
     void renderFood() const;
     void renderPoints() const;
     void renderSnake() const;
+    void renderTerrain() const;
     void renderBoards();
 
     void initializeGame();
@@ -168,8 +166,7 @@ public:
     inline void renderFood(SnakeBody, WINDOW*) const;
     void renderPoints() const;
     inline void renderSnake(std::unique_ptr<Snake> & snake, WINDOW* win) const;
-    inline void renderASnake() const;
-    inline void renderBSnake() const;
+    void renderTerrain(std::unique_ptr<Snake> & snake, WINDOW* win) const;
 
     bool controlSnake() const;
     void initializeGame();

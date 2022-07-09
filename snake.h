@@ -1,11 +1,9 @@
-//
-// Created by bitch on 6/29/22.
-//
-
 #ifndef SNAKE_H
 #define SNAKE_H
 
 #include <vector>
+#include "terrain.h"
+#include <memory>
 
 enum class Direction
 {
@@ -35,7 +33,7 @@ class Snake
 {
 public:
     //Snake();
-    Snake(int gameBoardWidth, int gameBoardHeight, int initialSnakeLength);
+    Snake(int gameBoardWidth, int gameBoardHeight, int initialSnakeLength, terrain Terrain = Plain);
     // Set random seed
     void setRandomSeed();
     // Initialize snake
@@ -47,6 +45,7 @@ public:
     // Check if the snake is dead
     bool hitWall() const;
     bool hitSelf() const;
+    bool hitMountain() const;
     bool checkCollision();
 
     bool changeDirection(Direction newDirection = Direction::Up);
@@ -57,6 +56,7 @@ public:
     bool moveFoward();
     void hasWalls(bool);
     void manualOrMachine(bool);
+    std::unique_ptr<Terrain> mTerrain;
 
 protected:
     const int mGameBoardWidth;

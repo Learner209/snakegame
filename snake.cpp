@@ -1,17 +1,8 @@
-//
-// Created by bitch on 6/29/22.
-//
-
 #include "snake.h"
-#include <string>
 #include <cstdlib>
 #include <ctime>
 #include <cmath>
-#include <ncurses.h>
 
-#include <cassert>
-
-#include <thread>
 SnakeBody::SnakeBody()
 {
 }
@@ -43,16 +34,15 @@ void SnakeBody::setY(int my)
 
 bool SnakeBody::operator == (const SnakeBody& snakeBody)
 {
-    // TODO overload the == operator for SnakeBody comparision.
-
     return (this->getX() == snakeBody.getX() && this->getY() == snakeBody.getY());
-
 }
 
-Snake::Snake(int gameBoardWidth, int gameBoardHeight, int initialSnakeLength): mGameBoardWidth(gameBoardWidth), mGameBoardHeight(gameBoardHeight), mInitialSnakeLength(initialSnakeLength)
+Snake::Snake(int gameBoardWidth, int gameBoardHeight, int initialSnakeLength, terrain map): mGameBoardWidth(gameBoardWidth), mGameBoardHeight(gameBoardHeight), mInitialSnakeLength(initialSnakeLength)
 {
     this->initializeSnake();
     this->setRandomSeed();
+    this->mTerrain.reset(new Terrain(gameBoardWidth, gameBoardHeight, map));
+    this->mTerrain->initializeTerrain(0);
 }
 
 void Snake::setRandomSeed()
@@ -138,7 +128,20 @@ bool Snake::toHitSelf() const
     return false;
 }
 
-
+bool Snake::hitMountain() const
+{
+    std::vector<Block> Terrains = this->mTerrain->getTerrains();
+    int l = Terrains.size();
+    SnakeBody head = this->mSnake[0];
+    for (int i = 0; i < l; i++)
+    {
+        if (head.getX() == Terrains[i].first && head.getY() == Terrains[i].second)
+        {
+            return true;
+        }
+    }
+    return false;
+}
 void Snake::circuitCheck()
 {
     SnakeBody newHead = this->createNewHead();
@@ -606,8 +609,7 @@ void Snake::simulateDirection(int difficulty, int delay) {
 
 SnakeBody Snake::createNewHead() const
 {
-    /* TODO
-     * read the position of the current head
+    /* read the position of the current head
      * read the current heading direction
      * add the new head according to the direction
      * return the new snake
@@ -625,9 +627,6 @@ SnakeBody Snake::createNewHead() const
     return newHead;
 }
 
-/*
- * If eat food, return true, otherwise return false
- */
 bool Snake::moveFoward()
 {
     /*
@@ -656,6 +655,10 @@ bool Snake::moveFoward()
 
 bool Snake::checkCollision()
 {
+    if (this->mTerrain->getattr() == Mountain && this->hitMountain())
+    {
+        return true;
+    }
     if (has_walls && (this->hitWall() || this->hitSelf()))
     {
         return true;

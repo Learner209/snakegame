@@ -1,12 +1,6 @@
-//
-// Created by bitch on 6/29/22.
-//
-
 #include <cassert>
 #include "game.h"
 
-#include <string>
-#include <iostream>
 #include <cmath>
 
 // For terminal delay
@@ -17,7 +11,7 @@
 #include <algorithm>
 
 
-bool Game::participants = false;
+bool Game::participants = true;
 bool Game::dynamic_difficulty = true;
 bool Game::has_walls = true;
 int Double::Difficulty = 0;
@@ -725,7 +719,36 @@ void Game::renderMode()
 
     while(true) {
 
-        std::string terrain = Terrains[indexTerrain];
+        terrain type = Terrains[indexTerrain];
+        std::string terrain;
+        switch(type)
+        {
+            case terrain::Plain:
+            {
+                terrain = "Plain";
+                break;
+            }
+            case terrain::Water:
+            {
+                terrain = "Water";
+                break;
+            }
+            case terrain::Mountain:
+            {
+                terrain = "Mountain";
+                break;
+            }
+            case terrain::Forest:
+            {
+                terrain = "Forest";
+                break;
+            }
+            case terrain::Maze:
+            {
+                terrain = "Maze";
+                break;
+            }
+        }
         mvwprintw(mode, axis_y + 1, axis_x, "%s", terrain.c_str());
         std::string participants = (Game::participants) ? "SOLO" : "DOUBLE";
         mvwprintw(mode, axis_y + 3, axis_x, "%s", participants.c_str());
@@ -804,7 +827,20 @@ SnakeBody Game::createRandomFood()
     do{
         width = rand() % (this->mGameBoardWidth - 2) + 1;
         height = rand() % (this->mGameBoardHeight - 2) + 1;
-    }while(mPtrSnake->isPartOfSnake(width, height) != -1);
+        if (mPtrSnake->isPartOfSnake(width, height) != -1)
+        {
+            continue;
+        }
+        if (this->mPtrSnake->mTerrain->getattr() == Mountain)
+        {
+            auto block = std::make_pair(width, height);
+            if (this->mPtrSnake->mTerrain->inVector(this->mPtrSnake->mTerrain->getTerrains(), block))
+            {
+                continue;
+            }
+        }
+        break;
+    }while(true);
     SnakeBody food(width, height);
     return food;
 }
@@ -822,7 +858,7 @@ SnakeBody Double::createRandomFood()
     return food;
 }
 
-void Solo::renderFood() const
+inline void Solo::renderFood() const
 {
     mvwaddch(this->mWindows[1], this->mFood.getY(), this->mFood.getX(), ACS_DIAMOND);
     wnoutrefresh(this->mWindows[1]);
@@ -834,7 +870,7 @@ inline void Double::renderFood(SnakeBody food, WINDOW* win) const
     wnoutrefresh(win);
 }
 
-void Solo::renderSnake() const
+inline void Solo::renderSnake() const
 {
     int snakeLength = this->mPtrSnake->getLength();
     std::vector<SnakeBody>& snake = this->mPtrSnake->getSnake();
@@ -856,6 +892,52 @@ inline void Double::renderSnake(std::unique_ptr<Snake> & snake, WINDOW* win) con
     wnoutrefresh(win);
 }
 
+void Solo::renderTerrain() const
+{
+    std::vector<Block> Terrains = this->mPtrSnake->mTerrain->getTerrains();
+    int l = Terrains.size();
+    terrain map = this->mPtrSnake->mTerrain->getattr();
+    char symbol;
+    switch (map) {
+        case terrain::Water:
+        {
+            symbol = '~';
+            break;
+        }
+        case terrain::Mountain:
+        {
+            symbol = '^';
+            break;
+        }
+        case terrain::Forest:
+        {
+            symbol = '#';
+            break;
+        }
+        case terrain::Maze:
+        {
+            symbol = 'o';
+            break;
+        }
+    }
+    for (int i = 0; i < l; i++)
+    {
+        mvwaddch(this->mWindows[1], Terrains[i].second, Terrains[i].first, symbol);
+    }
+    wnoutrefresh(this->mWindows[1]);
+}
+
+void Double::renderTerrain(std::unique_ptr<Snake> & snake, WINDOW* win) const
+{
+    std::vector<Block> Terrains = snake->mTerrain->getTerrains();
+    int l = Terrains.size();
+    for (int i = 0; i < l; i++)
+    {
+        mvwaddch(win, Terrains[i].first, Terrains[i].second, '~');
+    }
+    wnoutrefresh(win);
+}
+
 bool Solo::controlSnake() const
 {
     int key;
@@ -866,7 +948,6 @@ bool Solo::controlSnake() const
         case 'w':
         case KEY_UP:
         {
-            // TODO change the direction of the snake.
             this->mPtrSnake->changeDirection(Direction::Up);
             return true;
         }
@@ -874,8 +955,6 @@ bool Solo::controlSnake() const
         case 's':
         case KEY_DOWN:
         {
-            // TODO change the direction of the snake.
-
             this->mPtrSnake->changeDirection(Direction::Down);
             return true;
         }
@@ -883,7 +962,6 @@ bool Solo::controlSnake() const
         case 'a':
         case KEY_LEFT:
         {
-            // TODO change the direction of the snake.
             this->mPtrSnake->changeDirection(Direction::Left);
             return true;
         }
@@ -891,7 +969,6 @@ bool Solo::controlSnake() const
         case 'd':
         case KEY_RIGHT:
         {
-            // TODO change the direction of the snake.
             this->mPtrSnake->changeDirection(Direction::Right);
             return true;
         }
@@ -1011,19 +1088,43 @@ void Game::adjustDelay()
     {
         this->mDelay = this->mBaseDelay * pow(0.75, this->mDifficulty);
     }
+    if (this->mPtrSnake->mTerrain->getattr() == Forest)
+    {
+        SnakeBody head = this->mPtrSnake->getSnake()[0];
+        Block block = std::make_pair(head.getX(), head.getY());
+        if (this->mPtrSnake->mTerrain->inVector(this->mPtrSnake->mTerrain->getTerrains(), block))
+        {
+            this->mDelay *= 2;
+        }
+        else
+        {
+            this->mDelay = this->mBaseDelay * pow(0.75, this->mDifficulty);
+        }
+    }
 }
 
 void Double::adjustDelay()
 {
     this->mDelay = this->mBaseDelay * pow(0.8, Double::Difficulty);
+    if (this->mPtrSnake->mTerrain->getattr() == Forest)
+    {
+        SnakeBody head = this->mPtrSnake->getSnake()[0];
+        Block block = std::make_pair(head.getX(), head.getY());
+        if (this->mPtrSnake->mTerrain->inVector(this->mPtrSnake->mTerrain->getTerrains(), block))
+        {
+            this->mDelay *= 2;
+        }
+        else
+        {
+            this->mDelay = this->mBaseDelay * pow(0.8, Double::Difficulty);
+        }
+    }
 }
 
 void Solo::initializeGame()
 {
-    // allocate memory for a new snake
-    this->mPtrSnake.reset(new Snake(this->mGameBoardWidth, this->mGameBoardHeight, this->mInitialSnakeLength));
-
-    // TODO
+    //0.allocate memory for a new snake
+    this->mPtrSnake.reset(new Snake(this->mGameBoardWidth, this->mGameBoardHeight, this->mInitialSnakeLength, this->Terrains[indexTerrain]));
     //1.initialize the game points as zero
     this->mPoints = 0;
     //2. create a food at random place
@@ -1040,10 +1141,9 @@ void Solo::initializeGame()
 
 void Double::initializeGame()
 {
-    // allocate memory for a new snake
+    //0.allocate memory for a new snake
     this->aPtrSnake.reset(new Snake(this->mGameBoardWidth, this->mGameBoardHeight, this->mInitialSnakeLength));
     this->bPtrSnake.reset(new Snake(this->mGameBoardWidth, this->mGameBoardHeight, this->mInitialSnakeLength));
-
     //1.initialize the game points as zero
     this->aPoints = 0;
     this->bPoints = 0;
@@ -1061,7 +1161,6 @@ void Double::initializeGame()
     this->aPtrSnake->hasWalls(Game::has_walls);
     this->bPtrSnake->hasWalls(Game::has_walls);
     //7.Check manual or machine
-    //this->aPtrSnake->manualOrMachine(this->manToMachine);
     this->bPtrSnake->manualOrMachine(this->manToMachine);
 
 }
@@ -1079,24 +1178,30 @@ Status Solo::runGame()
             box(mWindows[1], 0, 0);
          // 3. move the current snake forward
             moveSuccess = false;
-            if (this->mPtrSnake->moveFoward()) moveSuccess = true;
+            if (this->mPtrSnake->moveFoward())
+            {
+                moveSuccess = true;
+            }
          // 4. check if the snake has eaten the food after movement
          // 5. check if the snake dies after the movement
-            if (this->mPtrSnake->checkCollision()) return END_OF_THE_GAME;
+            if (this->mPtrSnake->checkCollision())
+            {
+                return END_OF_THE_GAME;
+            }
          // 6. make corresponding steps for the ``if conditions'' in 3 and 4.
             if (moveSuccess){
                 this->mFood = this->createRandomFood();
                 this->mPtrSnake->senseFood(this->mFood);
+                this->mPoints++;
             }
          // 7. render the position of the food and snake in the new frame of window.
+            this->renderTerrain();
             this->renderFood();
             this->renderSnake();
             doupdate();
          // 8. update other game states and refresh the window
             this->renderPoints();
             this->renderDifficulty();
-            if (moveSuccess) this->mPoints++;
-            // refresh();
             std::this_thread::sleep_for(std::chrono::milliseconds(this->mDelay));
             if (Game::dynamic_difficulty) this->adjustDelay();
 
@@ -1324,18 +1429,22 @@ void Game::startGame() {
     while(true) {
         switch (choice) {
             case NEW_GAME: {
-
-                if (participants)  play = solo;
-                else play = battle;
-
+                if (participants)
+                {
+                    play = solo;
+                    play->readLeaderBoard();
+                }
+                else
+                {
+                    play = battle;
+                }
                 play->renderBoards();
+                play->initializeGame();
+                choice = play->runGame();
                 if (participants) {
                     play->updateLeaderBoard();
                     play->writeLeaderBoard();
-                    play->readLeaderBoard();
                 }
-                play->initializeGame();
-                choice = play->runGame();
                 break;
             }
             case END_OF_THE_GAME: {
@@ -1550,37 +1659,7 @@ int Game::menuSelect(WINDOW * menu, std::vector<std::string> lists, int axis_y, 
                             }
                             break;
                         }
-
                     }
-
-                    /*if (event.bstate == REPORT_MOUSE_POSITION && wmouse_trafo(menu, &event_y, &event_x, false))
-                    {
-                        if (direction)
-                        {
-                            if ((event_y - axis_y) % whitespace == 0)
-                            {
-                                mvwprintw(menu, axis_y + index * whitespace, axis_x, "%s", lists[index].c_str());
-                                index = (event_y - axis_y) / whitespace;
-                                wattron(menu, A_STANDOUT);
-                                mvwprintw(menu, event_y, axis_x, "%s", lists[offset].c_str());
-                                wattroff(menu, A_STANDOUT);
-                                wrefresh(menu);
-
-                            }
-                            break;
-                        }
-                        else
-                        {
-                            if((event_x - axis_x) % whitespace == 0)
-                            {
-                                mvwprintw(menu, axis_y, axis_x + index * whitespace, "%s", lists[index].c_str());
-                                index = (event_x - axis_x) / whitespace;
-                                wattron(menu, A_STANDOUT);
-                                mvwprintw(menu, event_y, axis_x, "%s", lists[index].c_str());
-                                wattroff(menu, A_STANDOUT);
-                            }
-                        }
-                    }*/
                 }
             }
         }
@@ -1699,14 +1778,14 @@ void Game::numSelect(WINDOW * menu, std::vector<int> &original, std::vector<int>
         }
     }
 }
+
 // https://en.cppreference.com/w/cpp/io/basic_fstream
 bool Game::readLeaderBoard()
 {
     std::fstream fhand(this->mRecordBoardFilePath, fhand.binary | fhand.in);
-    if (!fhand.is_open()){
-
+    if (!fhand.is_open())
+    {
         return false;
-
     }
     int temp;
     int i = 0;
@@ -1735,6 +1814,7 @@ bool Game::updateLeaderBoard()
         newScore = oldScore;
         updated = true;
     }
+
     return updated;
 }
 
@@ -1745,7 +1825,6 @@ bool Game::writeLeaderBoard()
     if (!fhand.is_open())
     {
         return false;
-
     }
     for (int i = 0; i < this->mNumLeaders; i ++)
     {
