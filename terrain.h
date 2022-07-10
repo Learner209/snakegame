@@ -23,6 +23,7 @@ public:
     // Initialize terrain
     void initializeTerrain(int difficulty);
     void initialize(int difficulty);
+    void initializeMountain(int difficulty);
     void initializeMaze(int difficulty);
 
     // Terrain Map

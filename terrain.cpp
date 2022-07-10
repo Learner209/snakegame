@@ -3,6 +3,7 @@
 #include <random>
 #include <cassert>
 #include <iostream>
+#include <ctime>
 //Terrain();
 
 Terrain::Terrain(int gameBoardWidth, int gameBoardHeight, terrain map): mGameBoardWidth(gameBoardWidth), mGameBoardHeight(gameBoardHeight), mTerrain(map)
@@ -19,6 +20,10 @@ void Terrain::initializeTerrain(int difficulty)
     if (this->mTerrain == Plain)
     {
         this->Terrains = {};
+    }
+    else if (this->mTerrain == Mountain)
+    {
+        this->initializeMountain(difficulty);
     }
     else if (this->mTerrain != Maze)
     {
@@ -94,6 +99,69 @@ void Terrain::initialize(int difficulty)
     }
 }
 
+void Terrain::initializeMountain(int difficulty)
+{
+    int pools = difficulty + 1;
+    int area = (this->mGameBoardWidth * this->mGameBoardHeight) / (60 * 20) * 60;
+    for (int i = 0; i < pools; i++)
+    {
+        int width, height;
+        do{
+            width = rand() % (this->mGameBoardWidth - 2) + 1;
+            height = rand() % (this->mGameBoardHeight - 2) + 1;
+        }while(inVector(this->Terrains, std::make_pair(width, height)));
+        Block init = std::make_pair(width, height);
+        std::queue<Block> pool;
+        pool.push(init);
+
+        while(this->Terrains.size() < (i + 1) * area)
+        {
+            int l = pool.size();
+            Block block = pool.front();
+            pool.pop();
+            for(int i = 0; i < l; i++)
+            {
+                int probability = this->randomInteger(0, 4);
+                if (probability < 2)
+                {
+                    auto left = std::make_pair(block.first - 1, block.second);
+                    if (inBounds(left) && !inVector(this->Terrains, left))
+                    {
+                        this->Terrains.push_back(left);
+                        pool.push(left);
+                    }
+                }
+                if (probability > 1)
+                {
+                    auto right = std::make_pair(block.first + 1, block.second);
+                    if (inBounds(right) && !inVector(this->Terrains, right))
+                    {
+                        this->Terrains.push_back(right);
+                        pool.push(right);
+                    }
+                }
+                if (probability > 1)
+                {
+                    auto up = std::make_pair(block.first, block.second - 1);
+                    if (inBounds(up) && !inVector(this->Terrains, up))
+                    {
+                        this->Terrains.push_back(up);
+                        pool.push(up);
+                    }
+                }
+                if (probability < 2)
+                {
+                    auto down = std::make_pair(block.first, block.second + 1);
+                    if (inBounds(down) && !inVector(this->Terrains, down))
+                    {
+                        this->Terrains.push_back(down);
+                        pool.push(down);
+                    }
+                }
+            }
+        }
+    }
+}
 void Terrain::initializeMaze(int difficulty)
 {
     return;
@@ -116,8 +184,8 @@ terrain Terrain::getattr() const
 
 bool Terrain::inBounds(Block block) const
 {
-    return (block.first > 0 && block.first < this->mGameBoardWidth - 2
-            && block.second > 0 && this->mGameBoardHeight - 2);
+    return (block.first > 0 && block.first < this->mGameBoardWidth - 1
+            && block.second > 0 && block.second < this->mGameBoardHeight - 1);
 }
 
 bool Terrain::inVector(std::vector<Block> Terrains, Block block) const

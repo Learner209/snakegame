@@ -11,7 +11,7 @@
 #include <algorithm>
 
 
-bool Game::participants = true;
+bool Game::participants = false;
 bool Game::dynamic_difficulty = true;
 bool Game::has_walls = true;
 int Double::Difficulty = 0;
@@ -1022,9 +1022,33 @@ void Double::renderTerrain(std::unique_ptr<Snake> & snake, WINDOW* win) const
 {
     std::vector<Block> Terrains = snake->mTerrain->getTerrains();
     int l = Terrains.size();
+    terrain map = snake->mTerrain->getattr();
+    char symbol;
+    switch (map) {
+        case terrain::Water:
+        {
+            symbol = '~';
+            break;
+        }
+        case terrain::Mountain:
+        {
+            symbol = '^';
+            break;
+        }
+        case terrain::Forest:
+        {
+            symbol = '#';
+            break;
+        }
+        case terrain::Maze:
+        {
+            symbol = 'o';
+            break;
+        }
+    }
     for (int i = 0; i < l; i++)
     {
-        mvwaddch(win, Terrains[i].first, Terrains[i].second, '~');
+        mvwaddch(win, Terrains[i].second, Terrains[i].first, symbol);
     }
     wnoutrefresh(win);
 }
@@ -1169,20 +1193,24 @@ bool Double::controlSnake() const
         }
     }
     return true;
+}
 
+void Game::calculateDelay()
+{
+    if (Game::dynamic_difficulty)
+    {
+        this->mDifficulty = this->mDifficulty_init + this->mPoints / 5;
+    }
+    else
+    {
+        this->mDifficulty = this->mDifficulty_init;
+    }
+    this->mDelay = this->mBaseDelay * pow(0.75, this->mDifficulty);
 }
 
 void Game::adjustDelay()
 {
-    this->mDifficulty = this->mDifficulty_init + this->mPoints / 5;
-    if (mPoints % 5 == 0)
-    {
-        this->mDelay = this->mBaseDelay * pow(0.75, this->mDifficulty);
-    }
-}
-
-void Game::adjustTerrainDelay()
-{
+    this->calculateDelay();
     if (this->mPtrSnake->mTerrain->getattr() == Forest)
     {
         SnakeBody head = this->mPtrSnake->getSnake()[0];
@@ -1197,17 +1225,13 @@ void Game::adjustTerrainDelay()
 void Double::adjustDelay()
 {
     this->mDelay = this->mBaseDelay * pow(0.8, Double::Difficulty);
-    if (this->mPtrSnake->mTerrain->getattr() == Forest)
+    if (this->aPtrSnake->mTerrain->getattr() == Forest)
     {
-        SnakeBody head = this->mPtrSnake->getSnake()[0];
+        SnakeBody head = this->aPtrSnake->getSnake()[0];
         Block block = std::make_pair(head.getX(), head.getY());
-        if (this->mPtrSnake->mTerrain->inVector(this->mPtrSnake->mTerrain->getTerrains(), block))
+        if (this->aPtrSnake->mTerrain->inVector(this->aPtrSnake->mTerrain->getTerrains(), block))
         {
             this->mDelay *= 2;
-        }
-        else
-        {
-            this->mDelay = this->mBaseDelay * pow(0.8, Double::Difficulty);
         }
     }
 }
@@ -1264,12 +1288,13 @@ Status Solo::runGame()
     auto countdown = new std::string;
     auto size = new std::atomic_int;
     auto signal = new Status;
+    auto drowningSignal = new Drowning;
     auto res = new Status;
     //Initialize
     *signal = NEW_GAME;
     *res = END_OF_THE_GAME;
 
-    auto execute = [this](auto countdown, auto size, auto signal, auto res){
+    auto execute = [this](auto countdown, auto size, auto signal, auto res, auto drowningSignal){
         while (true)
         {
             // 1. process your keyboard input
@@ -1316,17 +1341,19 @@ Status Solo::runGame()
             //  render the countdown
             //  update other game states and refresh the window
             mvwprintw(this->mWindows[0], 1, 1, "Welcome to the Snake game!");
+
+            if (*signal == END_OF_THE_GAME)
+            {
+                return;
+            }
+
             if (this->mPtrSnake->mTerrain->getattr() == Water)
             {
                 SnakeBody head = this->mPtrSnake->getSnake()[0];
                 auto block = std::make_pair(head.getX(), head.getY());
                 if (this->mPtrSnake->mTerrain->inVector(this->mPtrSnake->mTerrain->getTerrains(), block))
                 {
-                    if (*signal == END_OF_THE_GAME)
-                    {
-                        return;
-                    }
-                    *signal = DROWNING;
+                    *drowningSignal = DROWNING;
                     mvwprintw(this->mWindows[0], 2, 1, "Drowning:");
                     mvwprintw(this->mWindows[0], 2, (this->mScreenWidth - 1 - 5), "%s", countdown->c_str());
                     for (int i = 0; i < *size; i++)
@@ -1336,7 +1363,7 @@ Status Solo::runGame()
                 }
                 else
                 {
-                    *signal = RESUME_GAME;
+                    *drowningSignal = NORMAL;
                 }
             }
             this->renderPoints();
@@ -1348,14 +1375,13 @@ Status Solo::runGame()
             doupdate();
 
             if (MoveSuccess) this->mPoints++;
-            if (Game::dynamic_difficulty) this->adjustDelay();
-            this->adjustTerrainDelay();
+            this->adjustDelay();
             std::this_thread::sleep_for(std::chrono::milliseconds(this->mDelay));
         }
     };
 
-    std::thread th1(execute, countdown, size, signal, res);
-    std::thread th2(&Solo::calculateDrowning, this, countdown, size, signal);
+    std::thread th1(execute, countdown, size, signal, res, drowningSignal);
+    std::thread th2(&Solo::calculateDrowning, this, countdown, size, signal, drowningSignal);
     th2.join();
     th1.join();
     this->renderPoints();
@@ -1363,12 +1389,12 @@ Status Solo::runGame()
 
     Status ans = *res;
 
-    delete signal, countdown, size, res;
+    delete signal, countdown, size, res, drowningSignal;
 
     return ans;
 }
 
-inline void Solo::calculateDrowning(std::string * countdown, std::atomic_int * size, Status * signal)
+inline void Solo::calculateDrowning(std::string * countdown, std::atomic_int * size, Status * signal, Drowning * drowningSignal)
 {
     long double tmp = this->mDrowningTime * 1000;
     long double interval = (this->mDrowningTime * 1000) / (mScreenWidth - 2 - 9 - 5);
@@ -1377,7 +1403,7 @@ inline void Solo::calculateDrowning(std::string * countdown, std::atomic_int * s
 
     while(tmp > 0)
     {
-        if (*signal != DROWNING)
+        if (*drowningSignal != DROWNING)
         {
             tmp = this->mDrowningTime * 1000;
             interval = (this->mDrowningTime * 1000) / (mScreenWidth - 2 - 9 - 5);
@@ -1399,35 +1425,40 @@ inline void Solo::calculateDrowning(std::string * countdown, std::atomic_int * s
     *signal = END_OF_THE_GAME;
 }
 
-inline void Double::calculateDrowning(std::string * countdown, std::atomic_int * size, Status * signal)
+//player true: PLayer A; player false: Player B
+inline void Double::calculateDrowning(std::string * countdown, std::atomic_int *size, Status * signal, Drowning * drowningSignal, bool player)
 {
-    long double tmp = this->mCountdown * 1000;
-    long double interval = (this->mCountdown * 1000) / (mScreenWidth - 2);
-    *size = mScreenWidth - 2;
+    long double tmp = this->mDrowningTime * 1000;
+    long double interval = (this->mDrowningTime * 1000) / (mScreenWidth - 2 - 9 - 5);
+    *size = mScreenWidth - 2 - 9 - 5;
     int duration = interval;
 
     while(tmp > 0)
     {
-        if (*signal == DROWNING)
+        if (*drowningSignal == DROWNING || *drowningSignal == ((player) ? aDROWNING : bDROWNING))
         {
-            tmp = this->mCountdown * 1000;
-            interval = (this->mCountdown * 1000) / (mScreenWidth - 2);
-            *size = mScreenWidth - 2;
+            *countdown = "00:" + ((int(tmp / 1000) < 10) ? "0" + std::to_string(int(tmp / 1000)) : std::to_string(int(tmp / 1000)));
+            tmp -= interval;
+            (*size)--;
         }
-        if (*signal != DROWNING)
+        if (*drowningSignal == ((player)? bDROWNING : aDROWNING) || *drowningSignal == NORMAL)
         {
             tmp = this->mDrowningTime * 1000;
             interval = (this->mDrowningTime * 1000) / (mScreenWidth - 2 - 9 - 5);
             *size = mScreenWidth - 2 - 9 - 5;
-            duration = interval;
         }
-        if (*signal == END_OF_THE_GAME)
+        if (*signal == END_OF_THE_GAME || *signal == ((player)? aEND_OF_THE_GAME: bEND_OF_THE_GAME))
         {
             return;
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(duration));
     }
-    *signal = END_OF_THE_GAME;
+    if (*signal == (player)? bEND_OF_THE_GAME : aEND_OF_THE_GAME)
+    {
+        *signal = END_OF_THE_GAME;
+        return;
+    }
+    *signal = (player)? aEND_OF_THE_GAME : bEND_OF_THE_GAME;
 }
 
 inline void Double::renderCountdown(std::string * countdown, std::atomic_int * size, Status * signal)
@@ -1460,13 +1491,26 @@ Status Double::runGame()
 {
     auto countdown = new std::string;
     auto size = new std::atomic_int;
+    auto aCountdown = new std::string;
+    auto bCountdown = new std::string;
+    auto aDrownSize = new std::atomic_int;
+    auto bDrownSize = new std::atomic_int;
+    auto drowningSignal = new Drowning;
+    if (this->aPtrSnake->mTerrain->getattr() != Water)
+    {
+        aCountdown = bCountdown = nullptr;
+        aDrownSize = bDrownSize = nullptr;
+        drowningSignal = nullptr;
+    }
     auto signal = new Status;
     auto res = new Status;
     //Initialize
     *signal = NEW_GAME;
     *res = END_OF_THE_GAME;
+    if (this->aPtrSnake->mTerrain->getattr() == Water) *drowningSignal = NORMAL;
 
-    auto execute = [this](auto countdown, auto size, auto signal, auto res){
+    auto execute = [this](auto countdown, auto size, auto signal, auto res, auto drowningSignal = nullptr, auto aCountdown = nullptr,
+            auto bCountdown = nullptr, auto aDrownSize = nullptr, auto bDrownSize = nullptr){
         while (true)
         {
             // 1. process your keyboard input
@@ -1538,7 +1582,6 @@ Status Double::runGame()
                     mvwprintw(win, axis_y + 1, 3, "%s", "Perform better next time?");
                     wrefresh(win);
                 }
-
             }
             if (this->bPtrSnake->checkCollision())
             {
@@ -1586,57 +1629,88 @@ Status Double::runGame()
             {
                 this->renderFood(this->bFood, this->mWindows[2]);
                 this->renderSnake(this->bPtrSnake, this->mWindows[2]);
+
                 this->renderFood(this->aFood, this->mWindows[1]);
                 this->renderSnake(this->aPtrSnake, this->mWindows[1]);
+
+                this->renderTerrain(this->aPtrSnake, this->mWindows[1]);
+                this->renderTerrain(this->bPtrSnake, this->mWindows[2]);
+
                 doupdate();
             }
             else if (*signal == aEND_OF_THE_GAME)
             {
+                this->renderTerrain(this->bPtrSnake, this->mWindows[2]);
                 this->renderFood(this->bFood, this->mWindows[2]);
                 this->renderSnake(this->bPtrSnake, this->mWindows[2]);
+
                 doupdate();
             }
             else if (*signal == bEND_OF_THE_GAME)
             {
+                this->renderTerrain(this->aPtrSnake, this->mWindows[1]);
                 this->renderFood(this->aFood, this->mWindows[1]);
                 this->renderSnake(this->aPtrSnake, this->mWindows[1]);
+
                 doupdate();
             }
+            //render the drowning
             if (this->aPtrSnake->mTerrain->getattr() == Water)
             {
-                SnakeBody head = this->aPtrSnake->getSnake()[0];
-                auto block = std::make_pair(head.getX(), head.getY());
-                if (this->aPtrSnake->mTerrain->inVector(this->aPtrSnake->mTerrain->getTerrains(), block))
+                SnakeBody aHead = this->aPtrSnake->getSnake()[0];
+                auto aBlock = std::make_pair(aHead.getX(), aHead.getY());
+
+                SnakeBody bHead = this->bPtrSnake->getSnake()[0];
+                auto bBlock = std::make_pair(bHead.getX(), bHead.getY());
+
+                if (this->aPtrSnake->mTerrain->inVector(this->aPtrSnake->mTerrain->getTerrains(), aBlock))
                 {
-                    if (*signal == END_OF_THE_GAME)
+                    if (*drowningSignal == bDROWNING)
                     {
-                        return;
+                        *drowningSignal = DROWNING;
                     }
-                    *signal = aDROWNING;
+                    else if(*drowningSignal == NORMAL)
+                    {
+                        *drowningSignal = aDROWNING;
+                    }
                     mvwprintw(this->mWindows[0], 4, 1, "Drowning:");
-                    mvwprintw(this->mWindows[0], 4, (this->mScreenWidth - 1 - 5), "%s", countdown->c_str());
-                    for (int i = 0; i < *size; i++)
-                    {
-                        mvwaddch(this->mWindows[0], 4, i + 1 + 9, ACS_CKBOARD);
-                    }
-                }
-                else if (this->bPtrSnake->mTerrain->inVector(this->bPtrSnake->mTerrain->getTerrains(), block))
-                {
-                    if (*signal == END_OF_THE_GAME)
-                    {
-                        return;
-                    }
-                    *signal = bDROWNING;
-                    mvwprintw(this->mWindows[0], 5, 1, "Drowning:");
-                    mvwprintw(this->mWindows[0], 5, (this->mScreenWidth - 1 - 5), "%s", countdown->c_str());
-                    for (int i = 0; i < *size; i++)
+                    mvwprintw(this->mWindows[0], 4, (this->mScreenWidth - 1 - 5), "%s", aCountdown->c_str());
+                    for (int i = 0; i < *aDrownSize; i++)
                     {
                         mvwaddch(this->mWindows[0], 4, i + 1 + 9, ACS_CKBOARD);
                     }
                 }
                 else
                 {
-                    *signal = RESUME_GAME;
+                    if(*drowningSignal == aDROWNING)
+                    {
+                        *drowningSignal = NORMAL;
+                    }
+                }
+                if (this->bPtrSnake->mTerrain->inVector(this->bPtrSnake->mTerrain->getTerrains(), bBlock))
+                {
+                    if (*drowningSignal == aDROWNING)
+                    {
+                        *drowningSignal = DROWNING;
+                    }
+                    else if(*drowningSignal == NORMAL)
+                    {
+                        *drowningSignal = bDROWNING;
+                    }
+                    *drowningSignal = bDROWNING;
+                    mvwprintw(this->mWindows[0], 5, 1, "Drowning:");
+                    mvwprintw(this->mWindows[0], 5, (this->mScreenWidth - 1 - 5), "%s", bCountdown->c_str());
+                    for (int i = 0; i < *bDrownSize; i++)
+                    {
+                        mvwaddch(this->mWindows[0], 5, i + 1 + 9, ACS_CKBOARD);
+                    }
+                }
+                else
+                {
+                    if(*drowningSignal == bDROWNING)
+                    {
+                        *drowningSignal = NORMAL;
+                    }
                 }
             }
             //  render the countdown
@@ -1656,12 +1730,20 @@ Status Double::runGame()
             if (bMoveSuccess) this->bPoints++;
             std::this_thread::sleep_for(std::chrono::milliseconds(this->mDelay));
 
+
         }
 
     };
 
-    std::thread th1(execute, countdown, size, signal, res);
+    std::thread th1(execute, countdown, size, signal, res, drowningSignal, aCountdown, bCountdown, aDrownSize, bDrownSize);
     std::thread th2(&Double::renderCountdown, this, countdown, size, signal);
+    if (this->aPtrSnake->mTerrain->getattr() == Water)
+    {
+        std::thread th3(&Double::calculateDrowning, this, aCountdown, aDrownSize, signal, drowningSignal, true);
+        std::thread th4(&Double::calculateDrowning, this, bCountdown, bDrownSize, signal, drowningSignal, false);
+        th3.join();
+        th4.join();
+    }
     th2.join();
     th1.join();
     this->renderPoints();

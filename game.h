@@ -17,8 +17,8 @@
 
 //Game Status
 enum Status{END_OF_THE_GAME,aEND_OF_THE_GAME, bEND_OF_THE_GAME, NEW_GAME, RESUME_GAME, PAUSE_GAME,
-    MAIN_MENU, QUIT, MODE, SETTINGS, ABNORMAL_EXIT, NULL_INPUT, DROWNING, aDROWNING, bDROWNING};
-
+    MAIN_MENU, QUIT, MODE, SETTINGS, ABNORMAL_EXIT, NULL_INPUT};
+enum Drowning{DROWNING, aDROWNING, bDROWNING, NORMAL};
 
 void init();
 
@@ -66,8 +66,8 @@ public:
     virtual void renderSettings();
     void renderMode();
 
+    void calculateDelay();
     void adjustDelay();
-    void adjustTerrainDelay();
 
 protected:
     // We need to have two windows
@@ -107,9 +107,9 @@ protected:
 
     //Terrain
     std::vector <terrain> Terrains = {Plain, Water, Mountain, Forest, Maze};
-    int indexTerrain = 2;
+    int indexTerrain = 1;
     const int mDrowningTime = 5;
-    int mTerrainDifficulty = 2;
+    int mTerrainDifficulty = 0;
     //Auxiliary: Menu Select
     int menuSelect(WINDOW *menu, std::vector <std::string> lists, int axis_y, int axis_x, int whitespace, int init,
                    bool direction = 1);
@@ -137,7 +137,7 @@ public:
     void renderSnake() const;
     void renderTerrain() const;
     void renderBoards();
-    inline void calculateDrowning(std::string * countdown, std::atomic_int * size, Status * signal);
+    inline void calculateDrowning(std::string * countdown, std::atomic_int * size, Status * signal, Drowning* drowningSignal);
 
     void initializeGame();
     Status runGame();
@@ -164,7 +164,7 @@ public:
 
     void adjustDelay();
     inline void renderCountdown(std::string * countdown, std::atomic_int * size, Status * signal);
-    inline void calculateDrowning(std::string * countdown, std::atomic_int * size, Status * signal);
+    inline void calculateDrowning(std::string * countdown, std::atomic_int * size, Status * signal, Drowning * drowningSignal, bool player);
     void renderDifficulty() const;
 
     SnakeBody createRandomFood();
