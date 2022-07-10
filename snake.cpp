@@ -128,6 +128,21 @@ bool Snake::toHitSelf() const
     return false;
 }
 
+bool Snake::toHitMountain() const
+{
+    std::vector<Block> Terrains = this->mTerrain->getTerrains();
+    int l = Terrains.size();
+    SnakeBody newHead = this->createNewHead();
+    for (int i = 0; i < l; i++)
+    {
+        if (newHead.getX() == Terrains[i].first && newHead.getY() == Terrains[i].second)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool Snake::hitMountain() const
 {
     std::vector<Block> Terrains = this->mTerrain->getTerrains();
@@ -142,6 +157,7 @@ bool Snake::hitMountain() const
     }
     return false;
 }
+
 void Snake::circuitCheck()
 {
     SnakeBody newHead = this->createNewHead();
@@ -333,7 +349,6 @@ void Snake::simulateDirection(int difficulty, int delay) {
      * strike: the capability of hitting the food rather than revolving around it
      * moveBack: the sharpness of sensing the next food
      * collision: the ability to avoid collision*/
-
     int misTackle = difficulty * pow(1.2, delay), strike = (20 - difficulty * 4) * pow(0.8, delay);
     int moveBack = (20 - 5 * difficulty) * pow(0.9, delay), collision = difficulty / 2;
 
@@ -343,6 +358,18 @@ void Snake::simulateDirection(int difficulty, int delay) {
     {
         case Direction::Up:
         {
+            if (this->mTerrain->getattr() == Mountain && this->toHitMountain())
+            {
+                auto block = std::make_pair(head.getX() - 1, head.getY() - 1);
+                if (this->mTerrain->inVector(this->mTerrain->getTerrains(), block))
+                {
+                    this->mDirection = Direction::Right;
+                }
+                else
+                {
+                    this->mDirection = Direction::Left;
+                }
+            }
             if (this->toHitWall())
             {
                 if (head.getX() == 1)
@@ -409,6 +436,18 @@ void Snake::simulateDirection(int difficulty, int delay) {
         }
         case Direction::Down:
         {
+            if (this->mTerrain->getattr() == Mountain && this->toHitMountain())
+            {
+                auto block = std::make_pair(head.getX() - 1, head.getY() + 1);
+                if (this->mTerrain->inVector(this->mTerrain->getTerrains(), block))
+                {
+                    this->mDirection = Direction::Right;
+                }
+                else
+                {
+                    this->mDirection = Direction::Left;
+                }
+            }
             if (this->toHitWall())
             {
                 if (head.getX() == 1)
@@ -475,6 +514,18 @@ void Snake::simulateDirection(int difficulty, int delay) {
         }
         case Direction::Left:
         {
+            if (this->mTerrain->getattr() == Mountain && this->toHitMountain())
+            {
+                auto block = std::make_pair(head.getX() - 1, head.getY() + 1);
+                if (this->mTerrain->inVector(this->mTerrain->getTerrains(), block))
+                {
+                    this->mDirection = Direction::Up;
+                }
+                else
+                {
+                    this->mDirection = Direction::Down;
+                }
+            }
             if (this->toHitWall())
             {
                 if (head.getY() == 1)
@@ -541,6 +592,18 @@ void Snake::simulateDirection(int difficulty, int delay) {
         }
         case Direction::Right:
         {
+            if (this->mTerrain->getattr() == Mountain && this->toHitMountain())
+            {
+                auto block = std::make_pair(head.getX() + 1, head.getY() - 1);
+                if (this->mTerrain->inVector(this->mTerrain->getTerrains(), block))
+                {
+                    this->mDirection = Direction::Down;
+                }
+                else
+                {
+                    this->mDirection = Direction::Up;
+                }
+            }
             if (this->toHitWall())
             {
                 if (head.getY() == 1)

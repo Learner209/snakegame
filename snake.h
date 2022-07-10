@@ -46,6 +46,11 @@ public:
     bool hitWall() const;
     bool hitSelf() const;
     bool hitMountain() const;
+    //Machine Snake mechanism
+    bool toHitWall() const;
+    bool toHitSelf() const;
+    bool toHitMountain() const;
+
     bool checkCollision();
 
     bool changeDirection(Direction newDirection = Direction::Up);
@@ -71,8 +76,7 @@ protected:
     int machineSmartness = 0;
     //auxiliary function
     int randomInteger(int low, int high) const;
-    bool toHitWall() const;
-    bool toHitSelf() const;
+
     void circuitCheck();
 };
 

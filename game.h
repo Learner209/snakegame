@@ -107,7 +107,7 @@ protected:
 
     //Terrain
     std::vector <terrain> Terrains = {Plain, Water, Mountain, Forest, Maze};
-    int indexTerrain = 1;
+    int indexTerrain = 2;
     const int mDrowningTime = 5;
     int mTerrainDifficulty = 0;
     //Auxiliary: Menu Select
@@ -167,7 +167,7 @@ public:
     inline void calculateDrowning(std::string * countdown, std::atomic_int * size, Status * signal, Drowning * drowningSignal, bool player);
     void renderDifficulty() const;
 
-    SnakeBody createRandomFood();
+    SnakeBody createRandomFood(std::unique_ptr<Snake>& snake);
     inline void renderFood(SnakeBody, WINDOW*) const;
     void renderPoints() const;
     inline void renderSnake(std::unique_ptr<Snake> & snake, WINDOW* win) const;

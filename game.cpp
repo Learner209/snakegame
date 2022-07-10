@@ -936,7 +936,7 @@ SnakeBody Game::createRandomFood()
     return food;
 }
 
-SnakeBody Double::createRandomFood()
+SnakeBody Double::createRandomFood(std::unique_ptr<Snake>& snake)
 {
     // create a food at random places
     // make sure that the food doesn't overlap with the snake.
@@ -944,7 +944,21 @@ SnakeBody Double::createRandomFood()
     do{
         width = rand() % (this->mGameBoardWidth - 2) + 1;
         height = rand() % (this->mGameBoardHeight - 2) + 1;
-    }while(aPtrSnake->isPartOfSnake(width, height) != -1);
+        if (snake->isPartOfSnake(width, height) != -1)
+        {
+            continue;
+        }
+        if (snake->mTerrain->getattr() == Mountain)
+        {
+            auto block = std::make_pair(width, height);
+            if (snake->mTerrain->inVector(snake->mTerrain->getTerrains(), block))
+            {
+                continue;
+            }
+        }
+        break;
+    }while(true);
+
     SnakeBody food(width, height);
     return food;
 }
@@ -1213,7 +1227,7 @@ void Game::adjustDelay()
     this->calculateDelay();
     if (this->mPtrSnake->mTerrain->getattr() == Forest)
     {
-        SnakeBody head = this->mPtrSnake->getSnake()[0];
+        SnakeBody head = (this->mPtrSnake->getSnake())[0];
         Block block = std::make_pair(head.getX(), head.getY());
         if (this->mPtrSnake->mTerrain->inVector(this->mPtrSnake->mTerrain->getTerrains(), block))
         {
@@ -1227,9 +1241,14 @@ void Double::adjustDelay()
     this->mDelay = this->mBaseDelay * pow(0.8, Double::Difficulty);
     if (this->aPtrSnake->mTerrain->getattr() == Forest)
     {
-        SnakeBody head = this->aPtrSnake->getSnake()[0];
-        Block block = std::make_pair(head.getX(), head.getY());
-        if (this->aPtrSnake->mTerrain->inVector(this->aPtrSnake->mTerrain->getTerrains(), block))
+        SnakeBody aHead = (this->aPtrSnake->getSnake())[0];
+        Block aBlock = std::make_pair(aHead.getX(), aHead.getY());
+
+        SnakeBody bHead = (this->bPtrSnake->getSnake())[0];
+        Block bBlock = std::make_pair(bHead.getX(), bHead.getY());
+
+        if (this->aPtrSnake->mTerrain->inVector(this->aPtrSnake->mTerrain->getTerrains(), aBlock)
+        || this->bPtrSnake->mTerrain->inVector(this->bPtrSnake->mTerrain->getTerrains(), bBlock))
         {
             this->mDelay *= 2;
         }
@@ -1264,8 +1283,8 @@ void Double::initializeGame()
     this->bPoints = 0;
     //2. create a food at random place
     //3.make the snake aware of the food
-    this->aFood = this->createRandomFood();
-    this->bFood = this->createRandomFood();
+    this->aFood = this->createRandomFood(this->aPtrSnake);
+    this->bFood = this->createRandomFood(this->bPtrSnake);
     this->aPtrSnake->senseFood(this->aFood);
     this->bPtrSnake->senseFood(this->bFood);
     //4.Adjust delay
@@ -1535,23 +1554,24 @@ Status Double::runGame()
             if (*signal == aEND_OF_THE_GAME)
             {
                 werase(this->mWindows[2]);
-                box(this->mWindows[2], 0, 0);
             }
             else if (*signal == bEND_OF_THE_GAME)
             {
                 werase(this->mWindows[1]);
-                box(this->mWindows[1], 0, 0);
             }
             else
             {
                 werase(this->mWindows[1]);
-                box(this->mWindows[1], 0, 0);
                 werase(this->mWindows[2]);
-                box(this->mWindows[2], 0, 0);
             }
             werase(this->mWindows[0]);
-            box(this->mWindows[0], 0, 0);
-
+            if (*signal != END_OF_THE_GAME)
+            {
+                box(this->mWindows[0], 0, 0);
+                box(this->mWindows[1], 0, 0);
+                box(this->mWindows[2], 0, 0);
+                refresh();
+            }
             // 3. move the current snake forward
             if (*signal != aEND_OF_THE_GAME && this->aPtrSnake->moveFoward()) aMoveSuccess = true;
             if (*signal != bEND_OF_THE_GAME && this->bPtrSnake->moveFoward()) bMoveSuccess = true;
@@ -1613,16 +1633,17 @@ Status Double::runGame()
 
             // 6. make corresponding steps for the ``if conditions'' in 3 and 4.
             if (aMoveSuccess){
-                this->aFood = this->createRandomFood();
+                this->aFood = this->createRandomFood(this->aPtrSnake);
                 this->aPtrSnake->senseFood(this->aFood);
             }
             if (bMoveSuccess){
-                this->bFood = this->createRandomFood();
+                this->bFood = this->createRandomFood(this->bPtrSnake);
                 this->bPtrSnake->senseFood(this->bFood);
             }
             // 8. render the position of the food and snake in the new frame of window.
             if (*signal == END_OF_THE_GAME)
             {
+                *res = END_OF_THE_GAME;
                 return;
             }
             else if (*signal != aEND_OF_THE_GAME && *signal != bEND_OF_THE_GAME)
@@ -1697,7 +1718,6 @@ Status Double::runGame()
                     {
                         *drowningSignal = bDROWNING;
                     }
-                    *drowningSignal = bDROWNING;
                     mvwprintw(this->mWindows[0], 5, 1, "Drowning:");
                     mvwprintw(this->mWindows[0], 5, (this->mScreenWidth - 1 - 5), "%s", bCountdown->c_str());
                     for (int i = 0; i < *bDrownSize; i++)
@@ -1723,6 +1743,7 @@ Status Double::runGame()
             }
             this->renderPoints();
             this->renderDifficulty();
+            this->adjustDelay();
             wnoutrefresh(this->mWindows[0]);
             doupdate();
 
@@ -1751,7 +1772,7 @@ Status Double::runGame()
 
     Status ans = *res;
 
-    delete signal, countdown, size, res;
+    delete signal, countdown, size, res, aCountdown, bCountdown, aDrownSize, bDrownSize, drowningSignal;
 
     return ans;
 

@@ -1,9 +1,6 @@
 #include "terrain.h"
 #include <queue>
 #include <random>
-#include <cassert>
-#include <iostream>
-#include <ctime>
 //Terrain();
 
 Terrain::Terrain(int gameBoardWidth, int gameBoardHeight, terrain map): mGameBoardWidth(gameBoardWidth), mGameBoardHeight(gameBoardHeight), mTerrain(map)
@@ -57,8 +54,8 @@ void Terrain::initialize(int difficulty)
             pool.pop();
             for(int i = 0; i < l; i++)
             {
-                int probability = this->randomInteger(0, 4);
-                if (probability < 2)
+                int probability = this->randomInteger(0, 8);
+                if (probability < 3)
                 {
                     auto left = std::make_pair(block.first - 1, block.second);
                     if (inBounds(left) && !inVector(this->Terrains, left))
@@ -67,7 +64,7 @@ void Terrain::initialize(int difficulty)
                         pool.push(left);
                     }
                 }
-                if (probability > 1)
+                if (probability > 6)
                 {
                     auto right = std::make_pair(block.first + 1, block.second);
                     if (inBounds(right) && !inVector(this->Terrains, right))
@@ -76,7 +73,7 @@ void Terrain::initialize(int difficulty)
                         pool.push(right);
                     }
                 }
-                if (probability > 1)
+                if (probability < 2)
                 {
                     auto up = std::make_pair(block.first, block.second - 1);
                     if (inBounds(up) && !inVector(this->Terrains, up))
@@ -85,7 +82,7 @@ void Terrain::initialize(int difficulty)
                         pool.push(up);
                     }
                 }
-                if (probability < 2)
+                if (probability)
                 {
                     auto down = std::make_pair(block.first, block.second + 1);
                     if (inBounds(down) && !inVector(this->Terrains, down))
@@ -106,10 +103,14 @@ void Terrain::initializeMountain(int difficulty)
     for (int i = 0; i < pools; i++)
     {
         int width, height;
+
         do{
             width = rand() % (this->mGameBoardWidth - 2) + 1;
             height = rand() % (this->mGameBoardHeight - 2) + 1;
-        }while(inVector(this->Terrains, std::make_pair(width, height)));
+        }while(inVector(this->Terrains, std::make_pair(width, height))
+            || (width - this->mGameBoardWidth / 2) * (width - this->mGameBoardWidth / 2) +
+               (height - this->mGameBoardHeight / 2) * (height - this->mGameBoardHeight / 2) < area);
+
         Block init = std::make_pair(width, height);
         std::queue<Block> pool;
         pool.push(init);
@@ -121,8 +122,8 @@ void Terrain::initializeMountain(int difficulty)
             pool.pop();
             for(int i = 0; i < l; i++)
             {
-                int probability = this->randomInteger(0, 4);
-                if (probability < 2)
+                int probability = this->randomInteger(0, 8);
+                if (probability < 3)
                 {
                     auto left = std::make_pair(block.first - 1, block.second);
                     if (inBounds(left) && !inVector(this->Terrains, left))
@@ -131,7 +132,7 @@ void Terrain::initializeMountain(int difficulty)
                         pool.push(left);
                     }
                 }
-                if (probability > 1)
+                if (probability > 6)
                 {
                     auto right = std::make_pair(block.first + 1, block.second);
                     if (inBounds(right) && !inVector(this->Terrains, right))
@@ -140,7 +141,7 @@ void Terrain::initializeMountain(int difficulty)
                         pool.push(right);
                     }
                 }
-                if (probability > 1)
+                if (probability < 2)
                 {
                     auto up = std::make_pair(block.first, block.second - 1);
                     if (inBounds(up) && !inVector(this->Terrains, up))
@@ -149,7 +150,7 @@ void Terrain::initializeMountain(int difficulty)
                         pool.push(up);
                     }
                 }
-                if (probability < 2)
+                if (probability)
                 {
                     auto down = std::make_pair(block.first, block.second + 1);
                     if (inBounds(down) && !inVector(this->Terrains, down))

@@ -39,7 +39,6 @@ protected:
     terrain mTerrain;
     std::vector<Block> Terrains = {};
 
-    const int drowningTime = 10;
 
     //auxiliary function
     int randomInteger(int low, int high) const;
