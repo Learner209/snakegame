@@ -368,15 +368,12 @@ bool Battle::renderResult()
     {
         if(victory)
         {
-            if(mode==2)
-                mode=3;
-            else if(mode==3)
-                mode=0;
+            if(mode == 2) mode = 3;
+            else if(mode == 3) mode = 0;
         }
         else
         {
-            if(mode==3)
-                mode=0;
+            if(mode==3) mode = 0;
         }
         return true;
     }
@@ -598,8 +595,8 @@ void Battle::initializeGame()
 void Battle::createRandomFood()         //需要加入一些判断
 {
     while(true){
-        int foodx=(rand() % (this->mGameBoardWidth-2))+1;
-        int foody=(rand() % (this->mGameBoardHeight-2))+1;
+        int foodx = rand() % (this->mGameBoardWidth - 2) + 1;
+        int foody = rand() % (this->mGameBoardHeight - 2) + 1;
         SnakeBody FOOD(foodx,foody);
         int check=0;
 
@@ -666,8 +663,8 @@ void Battle::createRandomFood()         //需要加入一些判断
 void Battle::createRandomFood_run()
 {
     while(true){
-        int foodx=(rand() % (this->mGameBoardWidth-10))+10;
-        int foody=(rand() % (this->mGameBoardHeight-2))+1;
+        int foodx = (rand() % (this->mGameBoardWidth - 10)) + 10;
+        int foody = (rand() % (this->mGameBoardHeight- 2)) + 1;
         SnakeBody FOOD(foodx,foody);
         int check=0;
         for(SnakeBody x:this->mPtrSnake->getSnake()){
@@ -1829,13 +1826,13 @@ void Battle::runGame_run()
         else if(time_light>0)
             this->renderLight();
         if(this->mPtrSnake->hitWall())
-            lives=0;
+            lives = 0;
         if(this->checkDeath()){
-            if(reviveCoins==0){
+            if(reviveCoins == 0){
                 victory=false;
             }
             else if(weatherRevive()){
-                lives=5;
+                lives = 5;
                 reviveCoins--;
                 time_light=0;
             }
@@ -1844,7 +1841,7 @@ void Battle::runGame_run()
         }
         if(!victory)
             break;
-        if(time_all_run<=0)
+        if(time_all_run <= 0)
             break;
 
         std::this_thread::sleep_for(std::chrono::milliseconds(this->mDelay));
@@ -1871,7 +1868,6 @@ void Battle::runGame_crucial()
     time4=0;
     while (true)
     {
-
         if(!if_worked && livesBOSS>300 && livesBOSS<=400){
             mechanism=1;
             conditionBOSS=3;
@@ -1942,7 +1938,6 @@ void Battle::runGame_crucial()
             if(!victory)
                 break;
 
-
             std::this_thread::sleep_for(std::chrono::milliseconds(this->mDelay));
             refresh();
 
@@ -1982,7 +1977,6 @@ void Battle::runGame_crucial()
             }
             else if(mechanism!=6)
                 conditionBOSS=1;
-
         }
         else if(mechanism==1)
         {
@@ -2474,16 +2468,15 @@ Status Battle::runGame()
     bool choice;
     while (true)
     {
-        if(mode!=3){
+        if(mode != 3){
             this->renderBoards();
             //this->selectModes();
             this->initializeGame();
         }
-        if(mode==1){
+        if(mode == 1){
             this->runGame_main();
             this->updateLeaderBoard();
             this->writeLeaderBoard();
-
             //choice = Game::renderMenu(END_OF_THE_GAME);
             choice = this->renderRestartMenu();
             if (!choice)
@@ -2491,7 +2484,7 @@ Status Battle::runGame()
                 break;
             }
         }
-        else if(mode==2){
+        else if(mode == 2){
             this->runGame_run();
             choice = this->renderResult();
             if (!choice)

@@ -1872,7 +1872,8 @@ void Game::startGame() {
                 {
                     play = tackle;
                     play->changeMode(Game::participants - 1);
-                    choice = play->runGame();
+                    play->runGame();
+                    choice = MAIN_MENU;
                     continue;
                 }
                 play->renderBoards();
