@@ -1,5 +1,6 @@
 #include <cassert>
 #include "game.h"
+#include "battle.h"
 
 #include <cmath>
 
@@ -11,7 +12,7 @@
 #include <algorithm>
 
 
-bool Game::participants = false;
+int Game::participants = 2;
 bool Game::dynamic_difficulty = true;
 bool Game::has_walls = true;
 int Double::Difficulty = 0;
@@ -83,6 +84,7 @@ void Double::createInformationBoard()
     int startX = 0;
     this->mWindows[0] = newwin(this->mInformationHeight, this->mScreenWidth, startY, startX);
 }
+
 void Solo::renderInformationBoard() const
 {
     mvwprintw(mWindows[0], 1, 1, "Welcome to the snake game!");
@@ -707,18 +709,27 @@ void Game::renderMode()
 {
     int choice = 0;
 
-    std::vector<std::string> modes = {"Terrains:", "Participants:", "Terrain Difficulty"};
+    std::vector<std::string> modes;
+
     float startX = this->mScreenWidth * (1 - 0.618) / 2;
     float startY = this->mScreenHeight * (1 - 0.618) / 2;
     WINDOW * mode = newwin(this->mScreenHeight * 0.618, this->mScreenWidth * 0.618, startY, startX);
-
-    box(mode, 0, 0);
 
     int axis_x = (this->mScreenWidth * 0.618 - 11) / 2;
     int axis_y = (this->mScreenHeight * 0.618 - 4) / 2;
 
     while(true) {
 
+
+        if (Game::participants > 1)
+        {
+            modes = {"Participants:"};
+        }
+        else
+        {
+            modes = {"Terrain", "Participants:", "Terrain Difficulty:"};
+        }
+        axis_y = (this->mScreenHeight * 0.618 - ((Game::participants > 1)? 2 : 4)) / 2;
         terrain type = Terrains[indexTerrain];
         std::string terrain;
         switch(type)
@@ -749,17 +760,37 @@ void Game::renderMode()
                 break;
             }
         }
-
-        std::string participants = (Game::participants) ? "SOLO" : "DOUBLE";
+        std::string participantString;
+        if (Game::participants == 0)
+        {
+            participantString = "SOLO";
+        } else if(Game::participants == 1)
+        {
+            participantString = "DOUBLE";
+        }
+        else if(Game::participants == 2)
+        {
+            participantString = "CRUCIAL MODE";
+        }
+        else if(Game::participants == 3)
+        {
+            participantString = "SURVIVAL MODE";
+        }
         std::vector<std::string> terrainVector = {"Easy", "Medium", "Hard"};
 
+        wclear(mode);
+        box(mode, 0, 0);
 
-        mvwprintw(mode, axis_y + 1, axis_x, "%s", terrain.c_str());
-        mvwprintw(mode, axis_y + 3, axis_x, "%s", participants.c_str());
-        mvwprintw(mode, axis_y + 5, axis_x, "%s", terrainVector[this->mTerrainDifficulty].c_str());
+        if (Game::participants < 2)
+        {
+            mvwprintw(mode, axis_y + 1, axis_x, "%s", terrain.c_str());
+            mvwprintw(mode, axis_y + 5, axis_x, "%s", terrainVector[this->mTerrainDifficulty].c_str());
+        }
+        mvwprintw(mode, axis_y + 3, axis_x, "%s", participantString.c_str());
         wnoutrefresh(mode);
 
         choice = this->menuSelect(mode, modes, axis_y, axis_x, 2, 0);
+
 
         if (choice == -1){
             werase(mode);
@@ -767,7 +798,7 @@ void Game::renderMode()
             delwin(mode);
             return;
         }
-        if (choice == 0)
+        if (Game::participants < 2 && choice == 0)
         {
             int height = (mScreenHeight - 9) / 2, width = (mScreenWidth - 20) / 2;
             WINDOW *modeWin = newwin(9, 20, height, width);
@@ -831,23 +862,60 @@ void Game::renderMode()
             wrefresh(modeWin);
             delwin(modeWin);
         }
-        else if (choice == 1)
+        else if (Game::participants > 1 || choice == 1)
         {
-            int height = (mScreenHeight - 5) / 2, width = (mScreenWidth - 20) / 2;
-            WINDOW *modeWin = newwin(5, 20, height, width);
+            int height = (mScreenHeight - 8) / 2, width = (mScreenWidth - 20) / 2;
+            WINDOW *modeWin = newwin(8, 20, height, width);
             box(modeWin, 0, 0);
-            std::vector<std::string> participants = {"SOLO", "DOUBLE"};
-            if (this->participants) {
-                choice = this->menuSelect(modeWin, participants, 2, 2, 8, 0, false);
-            } else {
-                choice = this->menuSelect(modeWin, participants, 2, 2, 8, 1, false);
+            std::vector<std::string> participants = {"SOLO", "DOUBLE", "CRUCIAL MODE", "SURVIVAL MODE"};
+            switch (Game::participants) {
+                case 0:
+                {
+                    choice = this->menuSelect(modeWin, participants, 2, 2, 1, 0);
+                    break;
+                }
+                case 1:
+                {
+                    choice = this->menuSelect(modeWin, participants, 2, 2, 1, 1);
+                    break;
+                }
+                case 2:
+                {
+                    choice = this->menuSelect(modeWin, participants, 2, 2, 1, 2);
+                    break;
+                }
+                case 3:
+                {
+                    choice = this->menuSelect(modeWin, participants, 2, 2, 1, 3);
+                    break;
+                }
             }
             werase(modeWin);
             wrefresh(modeWin);
             delwin(modeWin);
+            switch (choice) {
+                case 0:
+                {
+                    Game::participants = 0;
+                    break;
+                }
+                case 1:
+                {
+                    Game::participants = 1;
+                    break;
+                }
+                case 2:
+                {
+                    Game::participants = 2;
+                    break;
+                }
+                case 3:
+                {
+                    Game::participants = 3;
+                    break;
+                }
 
-            if (choice) Game::participants = false;
-            else Game::participants = true;
+            }
         }
         else if (choice == 2)
         {
@@ -896,7 +964,7 @@ inline void Double::renderPoints() const
     mvwprintw(this->mWindows[0], 2, mScreenWidth - 3, "%s", std::to_string(this->bPoints).c_str());
 }
 
-void Solo::renderDifficulty() const
+inline void Solo::renderDifficulty() const
 {
     std::string difficultyString = std::to_string(this->mDifficulty);
     mvwprintw(this->mWindows[2], 9, 1, "%s", difficultyString.c_str());
@@ -1785,19 +1853,27 @@ void Game::startGame() {
 
     Game* solo = new Solo;
     Game* battle = new Double;
+    Game* tackle = new Battle;
     Game* play;
 
     while(true) {
         switch (choice) {
             case NEW_GAME: {
-                if (participants)
+                if (participants == 0)
                 {
                     play = solo;
                     play->readLeaderBoard();
                 }
-                else
+                else if (participants == 1)
                 {
                     play = battle;
+                }
+                else
+                {
+                    play = tackle;
+                    play->changeMode(Game::participants - 1);
+                    choice = play->runGame();
+                    continue;
                 }
                 play->renderBoards();
                 play->initializeGame();
@@ -1871,7 +1947,7 @@ void Game::startGame() {
 int Game::menuSelect(WINDOW * menu, std::vector<std::string> lists, int axis_y, int axis_x, int whitespace, int init, bool direction)
 {
     int key, size = lists.size(), index = 0, offset = 0;
-    if (size < 2) return -1;
+    //if (size < 2) return -1;
     if (direction)
     {
         for (; offset < size; offset++) {
@@ -2030,7 +2106,9 @@ int Game::menuSelect(WINDOW * menu, std::vector<std::string> lists, int axis_y, 
 
         if (key == 10) {
             break;
-        } else if (key == KEY_BACKSPACE || key == 27 || key == ' ') {
+        }
+        else if (key == KEY_BACKSPACE || key == 27 || key == ' ')
+        {
             return -1;
         }
 

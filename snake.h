@@ -34,14 +34,15 @@ class Snake
 public:
     //Snake();
     Snake(int gameBoardWidth, int gameBoardHeight, int initialSnakeLength, terrain Terrain = Plain, int difficulty = 0);
+    Snake(int gameBoardWidth, int gameBoardHeight, int initialSnakeLength, int mode);
     // Set random seed
     void setRandomSeed();
     // Initialize snake
     void initializeSnake();
+    void initializeSnake_run();
     // Checking API for generating random food
     int isPartOfSnake(int x, int y);
     void senseFood(SnakeBody food);
-    bool touchFood();
     // Check if the snake is dead
     bool hitWall() const;
     bool hitSelf() const;
@@ -63,6 +64,12 @@ public:
     void manualOrMachine(bool);
     std::unique_ptr<Terrain> mTerrain;
 
+    //Battle
+    bool magnetFood();                      //�����жϾ�������ʯʱ�Ƿ��������ʳ��
+    int& getMagnetTime();                   //��������ʯʱ��
+    void through();
+    Direction getdirection();
+
 protected:
     const int mGameBoardWidth;
     const int mGameBoardHeight;
@@ -74,6 +81,11 @@ protected:
     bool has_walls;
     bool manual = true;
     int machineSmartness = 0;
+
+    //Battle
+    std::vector<std::pair<char,SnakeBody>> sFood;
+    int time_magnet;
+    int snake_mode;
     //auxiliary function
     int randomInteger(int low, int high) const;
 

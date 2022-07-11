@@ -30,34 +30,32 @@ public:
 
 
     void createInformationBoard();
-    void renderInformationBoard() { return; };
+    virtual void renderInformationBoard() {};
 
-    virtual void createGameBoard() { return; };
-    virtual void renderGameBoard() const { return; };
+    virtual void createGameBoard() {};
+    virtual void renderGameBoard() const {};
 
-    virtual void createInstructionBoard() { return; };
-    virtual void renderInstructionBoard() { return; };
+    virtual void createInstructionBoard() {};
+    virtual void renderInstructionBoard() {};
 
-    void loadLeadBoard();
-    void updateLeadBoard();
     bool readLeaderBoard();
     bool updateLeaderBoard();
     bool writeLeaderBoard();
     void renderLeaderBoard() const;
 
-    virtual void renderBoards() { return; };
+    virtual void renderBoards() {};
 
-    virtual void initializeGame() { return; };
+    virtual void initializeGame() {};
     virtual Status runGame() { return RESUME_GAME; };
 
-    virtual void renderPoints() const { return; };
-    virtual void renderDifficulty() const { return; };
+    virtual void renderPoints() const {};
+    virtual void renderDifficulty() const {};
 
     SnakeBody createRandomFood();
 
-    virtual void renderFood() const { return; };
-    virtual void renderSnake() const { return; };
-    virtual void renderTerrain() const {return; };
+    virtual void renderFood() const {};
+    virtual void renderSnake() const { assert(false);};
+    virtual void renderTerrain() const {};
     virtual bool controlSnake() const { return true; };
 
     void startGame();
@@ -69,6 +67,9 @@ public:
     void calculateDelay();
     void adjustDelay();
 
+    //Battle
+    virtual void changeMode(int) {};
+
 protected:
     // We need to have two windows
     // One is for game introduction
@@ -78,7 +79,7 @@ protected:
     int mGameBoardWidth;
     int mGameBoardHeight;
     int mInformationHeight = 4;
-    const int mInstructionWidth = 20;
+    int mInstructionWidth = 20;
     std::vector<WINDOW *> mWindows;
     // Snake information
     const int mInitialSnakeLength = 2;
@@ -102,7 +103,7 @@ protected:
     //Mouse
     MEVENT event;
     //Participants
-    static bool participants;
+    static int participants;
     //Multi-thread
 
     //Terrain

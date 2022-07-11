@@ -45,6 +45,16 @@ Snake::Snake(int gameBoardWidth, int gameBoardHeight, int initialSnakeLength, te
     this->mTerrain->initializeTerrain(difficulty);
 }
 
+Snake::Snake(int gameBoardWidth, int gameBoardHeight, int initialSnakeLength,int mode): mGameBoardWidth(gameBoardWidth), mGameBoardHeight(gameBoardHeight), mInitialSnakeLength(initialSnakeLength),snake_mode(mode)
+{
+    if(snake_mode==1)
+        this->initializeSnake();
+    else if(snake_mode==2)
+        this->initializeSnake_run();
+    this->setRandomSeed();
+    this->mTerrain.reset(new Terrain(gameBoardWidth, gameBoardHeight, Plain));
+}
+
 void Snake::setRandomSeed()
 {
     // use current time as seed for random generator
@@ -63,6 +73,14 @@ void Snake::initializeSnake()
         this->mSnake.push_back(SnakeBody(centerX, centerY + i));
     }
     this->mDirection = Direction::Up;
+}
+
+void Snake::initializeSnake_run()
+{
+    int centerY = this->mGameBoardHeight / 2;
+    for(int i = 0;i < 6; i++)
+        this->mSnake.push_back(SnakeBody(6-i,centerY));
+    this->mDirection = Direction::Right;
 }
 
 int Snake::isPartOfSnake(int x, int y)
@@ -750,7 +768,48 @@ void Snake::manualOrMachine(bool flag)
     this->manual = !flag;
 }
 
+//Battle
+void Snake::through()
+{
+    int headx=this->mSnake[0].getX();
+    int heady=this->mSnake[0].getY();
+    SnakeBody head;
+    if(mDirection == Direction::Up && heady == 0)
+        head = SnakeBody(headx,mGameBoardHeight-2);
+    else if(mDirection == Direction::Down && heady==mGameBoardHeight-1)
+        head = SnakeBody(headx,1);
+    else if(mDirection == Direction::Left && headx == 0)
+        head = SnakeBody(mGameBoardWidth-2,heady);
+    else
+        head = SnakeBody(1,heady);
+    this->mSnake.insert(this->mSnake.begin(),head);
+    this->mSnake.pop_back();
+}
 
+bool Snake::magnetFood()
+{
+    SnakeBody newHead=this->getSnake()[0];
+    for(int i=newHead.getX()-3;i<newHead.getX()+4;i++){
+        for(int j=newHead.getY()-3;j<newHead.getY()+4;j++){
+            SnakeBody temp=SnakeBody(i,j);
+            if(this->mFood == temp)
+                return true;
+        }
+    }
+    return false;
+}
+
+int& Snake::getMagnetTime()
+{
+    return this->time_magnet;
+}
+
+Direction Snake::getdirection()
+{
+    return this->mDirection;
+}
+
+//aux
 int Snake::randomInteger(int low, int high) const
 {
     return low + rand() % (high - low);
