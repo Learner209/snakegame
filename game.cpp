@@ -1885,7 +1885,10 @@ void Game::startGame() {
                 break;
             }
             case END_OF_THE_GAME: {
-                choice = play->renderMenu(END_OF_THE_GAME);
+                if (Game::participants < 2)
+                {
+                    choice = play->renderMenu(END_OF_THE_GAME);
+                }
                 if (choice == ABNORMAL_EXIT) choice = MAIN_MENU;
                 break;
             }

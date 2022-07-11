@@ -51,14 +51,14 @@ Snake::Snake(int gameBoardWidth, int gameBoardHeight, int initialSnakeLength,int
         this->initializeSnake();
     else if(snake_mode==2)
         this->initializeSnake_run();
-    this->setRandomSeed();
     this->mTerrain.reset(new Terrain(gameBoardWidth, gameBoardHeight, Plain));
+    this->setRandomSeed();
 }
 
 void Snake::setRandomSeed()
 {
     // use current time as seed for random generator
-    std::srand(std::time(nullptr));
+    std::srand(std::time(NULL));
 }
 
 void Snake::initializeSnake()

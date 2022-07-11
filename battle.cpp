@@ -11,18 +11,6 @@
 using namespace std;
 Battle::Battle():Game()
 {
-
-    /*this->mWindows.resize(3);
-    initscr();
-    nodelay(stdscr, true);
-    keypad(stdscr, true);
-    noecho();
-    curs_set(0);
-    getmaxyx(stdscr, this->mScreenHeight, this->mScreenWidth);
-    this->mGameBoardWidth = this->mScreenWidth - this->mInstructionWidth;
-    this->mGameBoardHeight = this->mScreenHeight - this->mInformationHeight;
-
-    this->mLeaderBoard.assign(this->mNumLeaders, 0);*/
     this->mInformationHeight = 6;
     this->createInformationBoard();
     this->createGameBoard();
@@ -64,7 +52,6 @@ void Battle::renderInformationBoard() const
             y="Remained time: " + to_string(time_invincible/1000)+"s";
 
         }
-
         else{
             x="Condition: Normal";
         }
@@ -224,6 +211,80 @@ void Battle::renderInstructionBoard() const
     wrefresh(this->mWindows[2]);
 }
 
+bool Battle::renderRestartMenu() const
+{
+    WINDOW * menu;
+    int width = this->mGameBoardWidth * 0.5;
+    int height = this->mGameBoardHeight * 0.5;
+    int startX = this->mGameBoardWidth * 0.25;
+    int startY = this->mGameBoardHeight * 0.25 + this->mInformationHeight;
+
+    menu = newwin(height, width, startY, startX);
+    box(menu, 0, 0);
+    std::vector<std::string> menuItems = {"Restart", "Quit"};
+
+    int index = 0;
+    int offset = 4;
+    mvwprintw(menu, 1, 1, "Your Final Score:");
+    std::string pointString = std::to_string(this->mPoints);
+    mvwprintw(menu, 2, 1, "%s", pointString.c_str());
+    wattron(menu, A_STANDOUT);
+    mvwprintw(menu, 0 + offset, 1, "%s", menuItems[0].c_str());
+    wattroff(menu, A_STANDOUT);
+    mvwprintw(menu, 1 + offset, 1, "%s", menuItems[1].c_str());
+
+    wrefresh(menu);
+
+    int key;
+    while (true)
+    {
+        key = getch();
+        switch(key)
+        {
+            case 'W':
+            case 'w':
+            case KEY_UP:
+            {
+                mvwprintw(menu, index + offset, 1, "%s", menuItems[index].c_str());
+                index --;
+                index = (index < 0) ? menuItems.size() - 1 : index;
+                wattron(menu, A_STANDOUT);
+                mvwprintw(menu, index + offset, 1, "%s", menuItems[index].c_str());
+                wattroff(menu, A_STANDOUT);
+                break;
+            }
+            case 'S':
+            case 's':
+            case KEY_DOWN:
+            {
+                mvwprintw(menu, index + offset, 1, "%s", menuItems[index].c_str());
+                index ++;
+                index = (index > menuItems.size() - 1) ? 0 : index;
+                wattron(menu, A_STANDOUT);
+                mvwprintw(menu, index + offset, 1, "%s", menuItems[index].c_str());
+                wattroff(menu, A_STANDOUT);
+                break;
+            }
+        }
+        wrefresh(menu);
+        if (key == ' ' || key == 10)
+        {
+            break;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+    delwin(menu);
+
+    if (index == 0)
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
 bool Battle::renderResult()
 {
     WINDOW * menu;
@@ -237,7 +298,8 @@ bool Battle::renderResult()
     int index = 0;
     int offset = 4;
     std::vector<std::string> menuItems;
-    if(victory){
+    if(victory)
+    {
         mvwprintw(menu, 1, 1, "Congratulations!");
         if(mode==2){
             mvwprintw(menu, 2, 1, "You have caught up with the alien enermy!");
@@ -248,7 +310,8 @@ bool Battle::renderResult()
             menuItems = {"Restart", "Quit"};
         }
     }
-    else{
+    else
+    {
         mvwprintw(menu, 1, 1, "Sorry!");
         if(mode==2)
             mvwprintw(menu, 2, 1, "You haven't caught up with the alien enermy!");
@@ -303,13 +366,15 @@ bool Battle::renderResult()
 
     if (index == 0)
     {
-        if(victory){
+        if(victory)
+        {
             if(mode==2)
                 mode=3;
             else if(mode==3)
                 mode=0;
         }
-        else{
+        else
+        {
             if(mode==3)
                 mode=0;
         }
@@ -1515,7 +1580,7 @@ void Battle::checkSTerrain()
             std::pair<char,SnakeBody> x=this->sTerrain_run[i];
             int px=x.second.getX();
             int py=x.second.getY();
-            if(this->mPtrSnake->isPartOfSnake(px,py)){
+            if(this->mPtrSnake->isPartOfSnake(px,py) != -1){
                 lives--;
                 sTerrain_run.erase(sTerrain_run.begin()+i);
                 i--;
@@ -1530,7 +1595,7 @@ void Battle::checkSTerrain()
                     SnakeBody x=this->bomb[i];
                     int px=x.getX();
                     int py=x.getY();
-                    if(this->mPtrSnake->isPartOfSnake(px,py)){
+                    if(this->mPtrSnake->isPartOfSnake(px,py) != -1){
                         lives-=harmBOSS;
                         checkConfusion+=harmBOSS;
                         bomb.erase(bomb.begin()+i);
@@ -1543,7 +1608,7 @@ void Battle::checkSTerrain()
                     SnakeBody x=ammunition[i].second;
                     int px=x.getX();
                     int py=x.getY();
-                    if(this->mPtrSnake->isPartOfSnake(px,py)){
+                    if(this->mPtrSnake->isPartOfSnake(px,py) != -1){
                         lives-=harmBOSS;
                         checkConfusion+=harmBOSS;
                     }
@@ -1554,7 +1619,7 @@ void Battle::checkSTerrain()
                     SnakeBody x=this->swamp[i];
                     int px=x.getX();
                     int py=x.getY();
-                    if(this->mPtrSnake->isPartOfSnake(px,py)){
+                    if(this->mPtrSnake->isPartOfSnake(px,py) != -1){
                         time_lowspeed=5000;
                     }
                 }
@@ -1564,7 +1629,7 @@ void Battle::checkSTerrain()
             SnakeBody x=this->soldier[i];
             int px=x.getX();
             int py=x.getY();
-            if(this->mPtrSnake->isPartOfSnake(px,py)){
+            if(this->mPtrSnake->isPartOfSnake(px,py) != -1){
                 if(armor=="B")
                     lives++;
                 else if(time_invincible<=0){
@@ -2419,10 +2484,11 @@ Status Battle::runGame()
             this->updateLeaderBoard();
             this->writeLeaderBoard();
 
-            choice = Game::renderMenu(END_OF_THE_GAME);
+            //choice = Game::renderMenu(END_OF_THE_GAME);
+            choice = this->renderRestartMenu();
             if (!choice)
             {
-                return QUIT;
+                break;
             }
         }
         else if(mode==2){
@@ -2430,7 +2496,7 @@ Status Battle::runGame()
             choice = this->renderResult();
             if (!choice)
             {
-                return QUIT;
+               break;
             }
             // Where is Render restart menu?
         }
@@ -2441,8 +2507,10 @@ Status Battle::runGame()
             choice = this->renderResult();
             if (!choice)
             {
-                return QUIT;
+                break;
             }
         }
     }
+    return END_OF_THE_GAME;
 }
+
