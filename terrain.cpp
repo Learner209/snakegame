@@ -1,6 +1,7 @@
 #include "terrain.h"
 #include <queue>
 #include <random>
+#include <cassert>
 //Terrain();
 
 Terrain::Terrain(int gameBoardWidth, int gameBoardHeight, terrain map): mGameBoardWidth(gameBoardWidth), mGameBoardHeight(gameBoardHeight), mTerrain(map)
@@ -55,7 +56,7 @@ void Terrain::initialize(int difficulty)
             for(int i = 0; i < l; i++)
             {
                 int probability = this->randomInteger(0, 8);
-                if (probability < 3)
+                if (probability < 2)
                 {
                     auto left = std::make_pair(block.first - 1, block.second);
                     if (inBounds(left) && !inVector(this->Terrains, left))
@@ -73,7 +74,7 @@ void Terrain::initialize(int difficulty)
                         pool.push(right);
                     }
                 }
-                if (probability < 2)
+                if (probability > 4)
                 {
                     auto up = std::make_pair(block.first, block.second - 1);
                     if (inBounds(up) && !inVector(this->Terrains, up))
@@ -98,6 +99,7 @@ void Terrain::initialize(int difficulty)
 
 void Terrain::initializeMountain(int difficulty)
 {
+    //srand(time(nullptr));
     int pools = difficulty + 1;
     int area = (this->mGameBoardWidth * this->mGameBoardHeight) / (60 * 20) * 60;
     for (int i = 0; i < pools; i++)
@@ -167,8 +169,11 @@ void Terrain::initializeMaze(int difficulty)
 {
     return;
 }
-
 // Terrain Map
+void Terrain::changeTerrain(terrain type)
+{
+    this->mTerrain = type;
+}
 std::vector<Block>& Terrain::getTerrains()
 {
     return this->Terrains;

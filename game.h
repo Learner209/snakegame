@@ -54,7 +54,7 @@ public:
     SnakeBody createRandomFood();
 
     virtual void renderFood() const {};
-    virtual void renderSnake() const { assert(false);};
+    virtual void renderSnake() const {};
     virtual void renderTerrain() const {};
     virtual bool controlSnake() const { return true; };
 
@@ -107,13 +107,13 @@ protected:
     //Multi-thread
 
     //Terrain
-    std::vector <terrain> Terrains = {Plain, Water, Mountain, Forest, Maze};
-    int indexTerrain = 2;
+    std::vector <terrain> Terrains = {Plain, Water, Mountain, Forest};
+    static int indexTerrain;
     const int mDrowningTime = 5;
     int mTerrainDifficulty = 0;
     //Auxiliary: Menu Select
     int menuSelect(WINDOW *menu, std::vector <std::string> lists, int axis_y, int axis_x, int whitespace, int init,
-                   bool direction = 1);
+                   bool direction = true);
     void numSelect(WINDOW *menu, std::vector<int> &original, std::vector<int> &positions, int axis_y, int axis_x);
 
 };
@@ -123,7 +123,7 @@ public:
     Solo();
     ~Solo(){};
 
-    void createGameBoard() ;
+    void createGameBoard();
     void renderGameBoard() const;
 
     void createInformationBoard();
@@ -196,6 +196,7 @@ protected:
     int aPoints = 0;
     int bPoints = 0;
 
+    //Countdown in seconds
     int mCountdown = 60;
 
     SnakeBody aFood;
@@ -204,7 +205,9 @@ protected:
     int aDelay = 0;
     int bDelay = 0;
     //Man to Machine
+    //manToMachine: true = man VS cpu / false = man VS man
     bool manToMachine = false;
+    //The smartness of the machine snake
     int machineSmartness = 3;
 };
 #endif

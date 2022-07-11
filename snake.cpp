@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <cmath>
+#include <cassert>
 
 SnakeBody::SnakeBody()
 {
@@ -47,12 +48,13 @@ Snake::Snake(int gameBoardWidth, int gameBoardHeight, int initialSnakeLength, te
 
 Snake::Snake(int gameBoardWidth, int gameBoardHeight, int initialSnakeLength,int mode): mGameBoardWidth(gameBoardWidth), mGameBoardHeight(gameBoardHeight), mInitialSnakeLength(initialSnakeLength),snake_mode(mode)
 {
+    this->setRandomSeed();
     if(snake_mode==1)
         this->initializeSnake();
     else if(snake_mode==2)
         this->initializeSnake_run();
     this->mTerrain.reset(new Terrain(gameBoardWidth, gameBoardHeight, Plain));
-    this->setRandomSeed();
+
 }
 
 void Snake::setRandomSeed()
@@ -68,7 +70,7 @@ void Snake::initializeSnake()
     int centerX = this->mGameBoardWidth / 2;
     int centerY = this->mGameBoardHeight / 2;
 
-    for (int i = 0; i < this->mInitialSnakeLength; i ++)
+    for (int i = 0; i < this->mInitialSnakeLength; i++)
     {
         this->mSnake.push_back(SnakeBody(centerX, centerY + i));
     }
@@ -695,7 +697,7 @@ SnakeBody Snake::createNewHead() const
      * add the new head according to the direction
      * return the new snake
      */
-    SnakeBody currentHead = this->mSnake[0];
+    SnakeBody currentHead = mSnake[0];
     int width = currentHead.getX();
     int height = currentHead.getY();
     switch(this->mDirection){
@@ -704,6 +706,7 @@ SnakeBody Snake::createNewHead() const
         case Direction::Left : width -= 1; break;
         case Direction::Right : width += 1; break;
     };
+
     SnakeBody newHead(width, height);
     return newHead;
 }
@@ -715,7 +718,6 @@ bool Snake::moveFoward()
      * If eat food, return true, otherwise return false
      */
     SnakeBody newHead = this->createNewHead();
-
     //No-wall
     if (!has_walls)
     {

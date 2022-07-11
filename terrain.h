@@ -27,6 +27,7 @@ public:
     void initializeMaze(int difficulty);
 
     // Terrain Map
+    void changeTerrain(terrain type);
     std::vector<Block>& getTerrains();
     int getSize() const;
     bool inBounds(Block) const;

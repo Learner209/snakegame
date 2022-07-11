@@ -11,11 +11,13 @@
 #include <fstream>
 #include <algorithm>
 
-
-int Game::participants = 2;
+//Initialize
+int Game::participants = 0;
 bool Game::dynamic_difficulty = true;
 bool Game::has_walls = true;
+int Game::indexTerrain = 0;
 int Double::Difficulty = 0;
+
 
 void init(){
     initscr();
@@ -727,7 +729,7 @@ void Game::renderMode()
         }
         else
         {
-            modes = {"Terrain", "Participants:", "Terrain Difficulty:"};
+            modes = {"Terrain:", "Participants:", "Terrain Difficulty:"};
         }
         axis_y = (this->mScreenHeight * 0.618 - ((Game::participants > 1)? 2 : 4)) / 2;
         terrain type = Terrains[indexTerrain];
@@ -754,11 +756,11 @@ void Game::renderMode()
                 terrain = "Forest";
                 break;
             }
-            case terrain::Maze:
+            /*case terrain::Maze:
             {
                 terrain = "Maze";
                 break;
-            }
+            }*/
         }
         std::string participantString;
         if (Game::participants == 0)
@@ -800,10 +802,10 @@ void Game::renderMode()
         }
         if (Game::participants < 2 && choice == 0)
         {
-            int height = (mScreenHeight - 9) / 2, width = (mScreenWidth - 20) / 2;
-            WINDOW *modeWin = newwin(9, 20, height, width);
+            int height = (mScreenHeight - 8) / 2, width = (mScreenWidth - 20) / 2;
+            WINDOW *modeWin = newwin(8, 20, height, width);
             box(modeWin, 0, 0);
-            std::vector<std::string> terrains = {"Plain", "Water", "Mountain", "Forest", "Maze"};
+            std::vector<std::string> terrains = {"Plain", "Water", "Mountain", "Forest"};
             switch (this->Terrains[this->indexTerrain]) {
                 case terrain::Plain:
                 {
@@ -825,38 +827,38 @@ void Game::renderMode()
                     choice = this->menuSelect(modeWin, terrains, 2, 6, 1, 3);
                     break;
                 }
-                case terrain::Maze:
+                /*case terrain::Maze:
                 {
                     choice = this->menuSelect(modeWin, terrains, 2, 6, 1, 4);
                     break;
-                }
+                }*/
             }
             switch (choice) {
                 case 0:
                 {
-                    this->indexTerrain = 0;
+                    Game::indexTerrain = 0;
                     break;
                 }
                 case 1:
                 {
-                    this->indexTerrain = 1;
+                    Game::indexTerrain = 1;
                     break;
                 }
                 case 2:
                 {
-                    this->indexTerrain = 2;
+                    Game::indexTerrain = 2;
                     break;
                 }
                 case 3:
                 {
-                    this->indexTerrain = 3;
+                    Game::indexTerrain = 3;
                     break;
                 }
-                case 4:
+                /*case 4:
                 {
                     this->indexTerrain = 4;
                     break;
-                }
+                }*/
             }
             werase(modeWin);
             wrefresh(modeWin);
@@ -1326,7 +1328,7 @@ void Double::adjustDelay()
 void Solo::initializeGame()
 {
     //0.allocate memory for a new snake
-    this->mPtrSnake.reset(new Snake(this->mGameBoardWidth, this->mGameBoardHeight, this->mInitialSnakeLength, this->Terrains[indexTerrain], this->mTerrainDifficulty));
+    this->mPtrSnake.reset(new Snake(this->mGameBoardWidth, this->mGameBoardHeight, this->mInitialSnakeLength, this->Terrains[Game::indexTerrain], this->mTerrainDifficulty));
     //1.initialize the game points as zero
     this->mPoints = 0;
     //2. create a food at random place
@@ -1344,8 +1346,8 @@ void Solo::initializeGame()
 void Double::initializeGame()
 {
     //0.allocate memory for a new snake
-    this->aPtrSnake.reset(new Snake(this->mGameBoardWidth, this->mGameBoardHeight, this->mInitialSnakeLength, this->Terrains[indexTerrain], this->mTerrainDifficulty));
-    this->bPtrSnake.reset(new Snake(this->mGameBoardWidth, this->mGameBoardHeight, this->mInitialSnakeLength, this->Terrains[indexTerrain], this->mTerrainDifficulty));
+    this->aPtrSnake.reset(new Snake(this->mGameBoardWidth, this->mGameBoardHeight, this->mInitialSnakeLength, this->Terrains[Game::indexTerrain], this->mTerrainDifficulty));
+    this->bPtrSnake.reset(new Snake(this->mGameBoardWidth, this->mGameBoardHeight, this->mInitialSnakeLength, this->Terrains[Game::indexTerrain], this->mTerrainDifficulty));
     //1.initialize the game points as zero
     this->aPoints = 0;
     this->bPoints = 0;
@@ -1531,7 +1533,6 @@ inline void Double::calculateDrowning(std::string * countdown, std::atomic_int *
         if (*drowningSignal == ((player)? bDROWNING : aDROWNING) || *drowningSignal == NORMAL)
         {
             tmp = this->mDrowningTime * 1000;
-            interval = (this->mDrowningTime * 1000) / (mScreenWidth - 2 - 9 - 5);
             *size = mScreenWidth - 2 - 9 - 5;
         }
         if (*signal == END_OF_THE_GAME || *signal == ((player)? aEND_OF_THE_GAME: bEND_OF_THE_GAME))
@@ -1752,7 +1753,53 @@ Status Double::runGame()
                 SnakeBody bHead = this->bPtrSnake->getSnake()[0];
                 auto bBlock = std::make_pair(bHead.getX(), bHead.getY());
 
-                if (this->aPtrSnake->mTerrain->inVector(this->aPtrSnake->mTerrain->getTerrains(), aBlock))
+                if (this->aPtrSnake->mTerrain->inVector(this->aPtrSnake->mTerrain->getTerrains(), aBlock)
+                    && this->bPtrSnake->mTerrain->inVector(this->bPtrSnake->mTerrain->getTerrains(), bBlock))
+                {
+                    *drowningSignal = DROWNING;
+
+                    mvwprintw(this->mWindows[0], 4, 1, "Drowning:");
+                    mvwprintw(this->mWindows[0], 4, (this->mScreenWidth - 1 - 5), "%s", aCountdown->c_str());
+                    for (int i = 0; i < *aDrownSize; i++)
+                    {
+                        mvwaddch(this->mWindows[0], 4, i + 1 + 9, ACS_CKBOARD);
+                    }
+
+                    mvwprintw(this->mWindows[0], 5, 1, "Drowning:");
+                    mvwprintw(this->mWindows[0], 5, (this->mScreenWidth - 1 - 5), "%s", bCountdown->c_str());
+                    for (int i = 0; i < *bDrownSize; i++)
+                    {
+                        mvwaddch(this->mWindows[0], 5, i + 1 + 9, ACS_CKBOARD);
+                    }
+
+                }
+                else if (this->aPtrSnake->mTerrain->inVector(this->aPtrSnake->mTerrain->getTerrains(), aBlock))
+                {
+                    *drowningSignal = aDROWNING;
+
+                    mvwprintw(this->mWindows[0], 4, 1, "Drowning:");
+                    mvwprintw(this->mWindows[0], 4, (this->mScreenWidth - 1 - 5), "%s", aCountdown->c_str());
+                    for (int i = 0; i < *aDrownSize; i++)
+                    {
+                        mvwaddch(this->mWindows[0], 4, i + 1 + 9, ACS_CKBOARD);
+                    }
+                }
+                else if (this->bPtrSnake->mTerrain->inVector(this->bPtrSnake->mTerrain->getTerrains(), bBlock))
+                {
+                    *drowningSignal = bDROWNING;
+
+                    mvwprintw(this->mWindows[0], 5, 1, "Drowning:");
+                    mvwprintw(this->mWindows[0], 5, (this->mScreenWidth - 1 - 5), "%s", bCountdown->c_str());
+                    for (int i = 0; i < *bDrownSize; i++)
+                    {
+                        mvwaddch(this->mWindows[0], 5, i + 1 + 9, ACS_CKBOARD);
+                    }
+                }
+                else
+                {
+                    *drowningSignal = NORMAL;
+                }
+                /*if (this->aPtrSnake->mTerrain->inVector(this->aPtrSnake->mTerrain->getTerrains(), aBlock))
                 {
                     if (*drowningSignal == bDROWNING)
                     {
@@ -1774,6 +1821,10 @@ Status Double::runGame()
                     if(*drowningSignal == aDROWNING)
                     {
                         *drowningSignal = NORMAL;
+                    }
+                    else if (*drowningSignal == DROWNING)
+                    {
+                        *drowningSignal = bDROWNING;
                     }
                 }
                 if (this->bPtrSnake->mTerrain->inVector(this->bPtrSnake->mTerrain->getTerrains(), bBlock))
@@ -1799,7 +1850,11 @@ Status Double::runGame()
                     {
                         *drowningSignal = NORMAL;
                     }
-                }
+                    else if (*drowningSignal == DROWNING)
+                    {
+                        *drowningSignal = aDROWNING;
+                    }
+                }*/
             }
             //  render the countdown
             //  update other game states and refresh the window
@@ -1951,7 +2006,6 @@ void Game::startGame() {
 int Game::menuSelect(WINDOW * menu, std::vector<std::string> lists, int axis_y, int axis_x, int whitespace, int init, bool direction)
 {
     int key, size = lists.size(), index = 0, offset = 0;
-    //if (size < 2) return -1;
     if (direction)
     {
         for (; offset < size; offset++) {

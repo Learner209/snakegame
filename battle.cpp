@@ -2477,7 +2477,7 @@ Status Battle::runGame()
             this->runGame_main();
             this->updateLeaderBoard();
             this->writeLeaderBoard();
-            //choice = Game::renderMenu(END_OF_THE_GAME);
+
             choice = this->renderRestartMenu();
             if (!choice)
             {
@@ -2491,7 +2491,6 @@ Status Battle::runGame()
             {
                break;
             }
-            // Where is Render restart menu?
         }
         else{
             this->initializeGame();

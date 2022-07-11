@@ -74,7 +74,7 @@ protected:
     const int mGameBoardWidth;
     const int mGameBoardHeight;
     // Snake information
-    const int mInitialSnakeLength;
+    const int mInitialSnakeLength = 2;
     Direction mDirection;
     SnakeBody mFood;
     std::vector<SnakeBody> mSnake;
