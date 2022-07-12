@@ -11,7 +11,7 @@ This is an assigment for course CS1605 in Shanghai Jiao Tong Uninersity. \
 The snake game is firstly put out in Gremlin platform in 1976. Thanks for the popularization from Nokia, it has become one of the most famous game in the world, and people has developed a lot of versions vehind them. In 2016, a Wechat miniprogram called *the SnakeWar*(贪吃蛇大作战) made this game popular again.
  
 Our team also develops a snakegame with the C++ and ncurses library. This game not only includes the basic function of the snake game, but also includes our own thoughts.
-## Preview of our game. 游戏速览
+## Preview of our game 游戏速览
 ![](https://notes.sjtu.edu.cn/uploads/upload_8cd5ccc079e54d1a1340aa869fb4798d.png)
 ![](https://notes.sjtu.edu.cn/uploads/upload_745e807547832a1005c3ec923aee43b6.png)
 ![](https://notes.sjtu.edu.cn/uploads/upload_346aaa3d87798c2ce81b8df5ae349494.png)
@@ -28,13 +28,13 @@ Our team also develops a snakegame with the C++ and ncurses library. This game n
 *   Exciting survial mode and wonderful mechanisms for the snake to embark on a journey filled with both pitfalls and rewards\.
 *   Crucial mode leading the users into an tense, intricate plot with different equipments and skills involving revivecoin, HP, BOSS and so on. It enables the user to plunge into a overwhelming adventure to face against the mighty aliens and bring glory back to our motherland\.
  
-## The symbol
+## The symbol 符号
 @ for the snake body.
 #/◆ for the food
  
-## Mode
+## Mode 游戏模式
  
-### Solo
+### Solo 单人模式
 *   *Difficulty*: the emblem of the velocity of the snake. The velocity of the snake skyrockets in exponential frame as the difficulty rises up. The underlying mechanism denotes that the velocity of the snake is $\dfrac{1}{0.75^{\mathrm{difficulty}}}$ units per milliesecond.
 *   *Has dynamic difficulty*: the API provided for users to control whether the velocity will be dynamically modified when our snake is on its wonderful journey. When it is on, the velocity of the speed will ascend (the Difficulty will rise by one) whenever the player gain five more points.
 *   *Has walls*: the API furnished for users to decide whether the field has walls along the process. 
@@ -42,7 +42,7 @@ Our team also develops a snakegame with the C++ and ncurses library. This game n
 *   *难度*：表征蛇移动速度。蛇的移动速度随着难度递增呈指数级增长。底层的实现机制决定了蛇的移动速度为 $\dfrac{1}{0.75^{\mathrm{难度}}}$单元每毫秒。
 *   *动态调整难度*：为用户提供的接口以控制蛇的速度是否会在游戏过程中动态调整。当动态调整难度处于*On*状态，蛇的移动速度会在游戏过程中动态调整（难度会上升一个单元）每当用户另得五分。
 *   *墙壁*: 为用户提供的接口以决定游戏区域边界是否有墙。
-### Double
+### Double 双人模式
  
 *   *Speed*: Velocity of the snake. The velocity of the snake skyrockets in exponential frame as the difficulty rises up. The underlying mechanism denotes that the velocity of the snake is $\dfrac{1}{0.8^{\mathrm{difficulty}}}$ units per milliesecond \(The base is modified form 0.75 to 0.8 as the player enjoys the game in a smaller frame of window\).
 *   *Countdown*: The countdown under which two players are to compete. When altering the countdown, the cursor will be immediately trailing the user's input. The Backspace key will enable the user to revert to the previous digit. If feeling uncomfortable with the current change, feel free to touch the first digit to revise the countdown again. \(Notice: A warning window will pop up when you inputs a number invalid\. A valid countdown is deemed to be a time denoting in the format of 'minutes:seconds' anywhere between 0:00 to 9:59\.)
@@ -54,10 +54,10 @@ Our team also develops a snakegame with the C++ and ncurses library. This game n
  *   *倒计时*：两位玩家相互竞争的时间限制。当在设置中调整倒计时时，光标会紧随用户输入出现。如果用户输入Backsapce键，光标会回退到前一位数字。如果用户对输入的倒计时不满意，尽情点击倒计时的首位数字来重新输入心仪的倒计时。\(提示: 一个警告窗口会短暂弹出如果用户输入一个不合法的倒计时。 一个合法的倒计时被定义为任意介于00：00到9：59的格式为“分钟：秒”的输入。\)
  *   *墙壁*：与单人模式的*墙壁*作用相同。
  *   *人对？*: 选择对手类型。如果选择“人对人”模式， 你将会与你的朋友一决高下。但是如果选择“人对电脑”模式， 你将会和一个具有智能的机器人同场竞技。
- *   *难度*： 这个选项只有用户处于“人对电脑”模式下才会出现。被划分为“简单”，“普通”， “中等”， “困难”四个级别， 难度代表着机器蛇的智能水平。尽管机器蛇极其谨慎与聪明，但这个*难度*接口将会防止你被机器蛇零封。底层机制运用了概率论和四个指数来构成机器蛇的综合智能水平。\(错失食物：蛇在靠近食物所在行于列时错失食物的量度。 打击:事物在近距离时吃到食物的成功率的量度。 嗅觉：蛇感受食物的敏锐程度的抽象化。 碰撞： 蛇躲避撞击的能力的量化。 机器蛇以这四个指数为基础实现操作， 而四个指数会随着玩家所选难度和移动速度而动态调整。\)
+ *   *难度*： 这个选项只有用户处于“人对电脑”模式下才会出现。被划分为“简单”，“普通”， “中等”， “困难”四个级别， 难度代表着机器蛇的智能水平。尽管机器蛇极其谨慎与聪明，但这个*难度*接口将会防止你被机器蛇零封。底层机制运用了概率论和四个指数来构成机器蛇的综合智能水平。\(错失食物：蛇在靠近食物所在行于列时错失食物的量度。 打击:蛇在近距离时吃到食物的成功率的量度。 嗅觉：蛇感受食物的敏锐程度的抽象化。 碰撞： 蛇躲避撞击的能力的量化。 机器蛇以这四个指数为基础实现操作， 而四个指数会随着玩家所选难度和移动速度而动态调整。\)
  
  
-### Survival Mode
+### Survival Mode 生存模式
 This mode is for survive mode. In this mode, we have different kinds of food: 
 - **\*** for randomly increase or decrease difficulties(with $30\%$ possiblity to increase difficulty and $70\%$ to decrease.)
 - **%** for the switch of special terrian(with $30\%$ possiblity to add a terrian and $70\%$ to remove a terrian.)
@@ -97,8 +97,8 @@ h 小山,撞上蛇长度减1,得分减1,小山被撞碎消失
                 特殊地形每隔10S随机出现一个,场上最多存在(2*难度+1)个,而且会每隔15S检测一次地形数量是否达到最大数量,如果是,会更新最早生成的那个地形
  
  
-### Crucial Mode
-Background: In 2022, the alien invade the earth. And our snake warrior are trying to protect our mother land.
+### Crucial Mode 攻坚模式
+Background: In 2022, the alien invade the earth. And our snake warrior are trying to protect our motherland.
  
 #### Stage 1
 Running to the enemies' base. Please survive within the time limit.
@@ -191,7 +191,7 @@ D、随机召唤3个小兵（%），触碰则生命值减少2.
 （4）贪吃蛇的攻击方式：通过吃食物，不断长大，长度大于等于5后，可对BOSS冲撞，造成5点伤害，并牺牲这部分身体
  
  
-## Terrains
+## Terrains 游戏地形
 *   *Plain*: boundless and flat plain for our snake to embark on its adventure\. No
  effects\.
 *   *Water*: Shiny waves and broad blue vista\. Unfortunately, our snake hasn't been managed to learn to swim since its childhood. Once the snake's head is in the water, it is drowning desperately and the progress bar in the upper window will be indicating the drowning countdown. And if it has been drowning for more than five seconds, our snake will be gone forever...
