@@ -205,7 +205,7 @@ D、随机召唤3个小兵（%），触碰则生命值减少2.
  
  
  
-## Installition 安装
+## Installation 安装
 1. System version 系统要求\
 Linux:  [Ubuntu 22.04](https://releases.ubuntu.com/22.04/ubuntu-22.04-desktop-amd64.iso.torrent?_ga=2.216621590.160370100.1657544528-639798126.1647262586  )\
 Windows: please use WSL  请使用wsl进行安装
@@ -243,8 +243,8 @@ The *Setting* menu is for setting the difficulty.
 ## Barriers yet encountered 目前开发中的问题
 *   *Machine Snake*: Cannot come up with a perfect algorithm for the machine snake to avoid trapping itself into a pitfall under the traditinal frame of "if else" and "while" clauses\. The fundamental checks other than hitting itself, wall and the mountain are the circuit check in which the snake is required to take measures before forming a circuit which could be the premonition of a crash\. We are trying to use the neural network to update this algorithim
 *   *Multi-thread*: When in the *Double* mode, two players should be playing in their seperate boundaries, and this can be preferably implemented using ```std::thread```. Executing two threads dictated by two lambda functions, each of which is used to maneuver its own snake and render its relevant information and even to manipulate the snake at different rates\. But because the ncurses environment operates on static variables to execute the render action, multi-threads can only operate stably when only one channel under which occasion other threads are to be independent of the GUI library and finish the underlying computing procedures.
-*   机器蛇：在传统的“if else","while"逻辑框架目前暂无法较为完美实现一条能做到效率与保障安全相协调的机器蛇。目前除了基本的游戏中止的逻辑判断外只能采用回路检查，在形成回路前作出调整.故而机器蛇的逻辑设置不完全合理, 拟采用神经网路对算法进行更新.
-*   多线程：当进入双人模式，玩家理应可以在各自的窗口中自由操纵蛇以及相关设置， 进一步可以实现以不同速率行进， 实现两个窗口的相对独立. 最佳解决方案是使用多线程，调用两个lambda函数分别执行两个窗口的不同行为. 但是ncurses工作于静态或全局数据之上，当在不同线程中进行输出操作时，一般屏幕上都会出现错乱.所以在ncurses下的多线程稳定运行一般只能有一个线程进行输出操作， 其他线程进行相关运算。在代码中，实现drowning和countdown时均采用一个线程进行倒计时打印，其他线程进行剩余时间和格数大小的计算。
+*   *机器蛇*：在传统的“if else","while"逻辑框架目前暂无法较为完美实现一条能做到效率与保障安全相协调的机器蛇。目前除了基本的游戏中止的逻辑判断外只能采用回路检查，在形成回路前作出调整.故而机器蛇的逻辑设置不完全合理, 拟采用神经网路对算法进行更新.
+*   *多线程*：当进入双人模式，玩家理应可以在各自的窗口中自由操纵蛇以及相关设置， 进一步可以实现以不同速率行进， 实现两个窗口的相对独立. 最佳解决方案是使用多线程，调用两个lambda函数分别执行两个窗口的不同行为. 但是ncurses工作于静态或全局数据之上，当在不同线程中进行输出操作时，一般屏幕上都会出现错乱.所以在ncurses下的多线程稳定运行一般只能有一个线程进行输出操作， 其他线程进行相关运算。在代码中，实现drowning和countdown时均采用一个线程进行倒计时打印，其他线程进行剩余时间和格数大小的计算。
 ## The future game with GUI 可视化实现(未来升级版)
 This is a version unfinished. We use the QT6 library to implement the GUI verison.\
 一个尚未完成开发的版本. 该版本采用QT6库进行重构.\
