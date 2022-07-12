@@ -198,6 +198,10 @@ D、随机召唤3个小兵（%），触碰则生命值减少2.
 *   *Mountain*: Steep hills and hard rocks/. Once the head hits the mountain. Our wretched snake will have to say farewell to its wonderful journey.
 *   *Forest*: Dense trees and large marshes. Once the snake's head writhes into this dense forest, the velocity will decrease by half\.
      
+*   *平原*： 贪吃蛇即将在浩渺广袤，一望无彻的平原书写下自己的新篇章。遗憾的是，平原对蛇没有任何影响。
+*   *大海*： 清风徐来，水波不兴。白露横江， 水光接天。不幸的是，我们的贪吃蛇从懵懂的童年时期就不会游泳。所以一旦蛇头浸入大海，他会溺水， 上方屏幕的进度条将会显示他的溺水程度。如果你无法拯救它于水深\(火热\)之中超过五秒，他只能就此与我们诀别了...\(苏轼 《前赤壁赋》\)
+*   *高山*: 连峰去天不盈尺， 枯松倒挂倚绝壁。当蛇头撞上陡峭岩壁，精彩刺激的旅程也只能就此结束。\(李白 《蜀道难》\)
+*   *森林*： 素晖射流濑， 翠色绵森林。当蛇头进入浓茂森林，它的移动速度会减半。\(《同家兄题渭南王公别业》唐 蔡希寂\)
  
  
  
@@ -239,8 +243,8 @@ The *Setting* menu is for setting the difficulty.
 ## Barriers yet encountered 目前开发中的问题
 *   *Machine Snake*: Cannot come up with a perfect algorithm for the machine snake to avoid trapping itself into a pitfall under the traditinal frame of "if else" and "while" clauses\. The fundamental checks other than hitting itself, wall and the mountain are the circuit check in which the snake is required to take measures before forming a circuit which could be the premonition of a crash\. We are trying to use the neural network to update this algorithim
 *   *Multi-thread*: When in the *Double* mode, two players should be playing in their seperate boundaries, and this can be preferably implemented using ```std::thread```. Executing two threads dictated by two lambda functions, each of which is used to maneuver its own snake and render its relevant information and even to manipulate the snake at different rates\. But because the ncurses environment operates on static variables to execute the render action, multi-threads can only operate stably when only one channel under which occasion other threads are to be independent of the GUI library and finish the underlying computing procedures.
-*   机器蛇的逻辑设置不完全合理, 拟采用神经网路对算法进行更新.
-*   由于GUI逻辑设置问题, 在多人游戏时存在显示bug
+*   机器蛇：在传统的“if else","while"逻辑框架目前暂无法较为完美实现一条能做到效率与保障安全相协调的机器蛇。目前除了基本的游戏中止的逻辑判断外只能采用回路检查，在形成回路前作出调整.故而机器蛇的逻辑设置不完全合理, 拟采用神经网路对算法进行更新.
+*   多线程：当进入双人模式，玩家理应可以在各自的窗口中自由操纵蛇以及相关设置， 进一步可以实现以不同速率行进， 实现两个窗口的相对独立. 最佳解决方案是使用多线程，调用两个lambda函数分别执行两个窗口的不同行为. 但是ncurses工作于静态或全局数据之上，当在不同线程中进行输出操作时，一般屏幕上都会出现错乱.所以在ncurses下的多线程稳定运行一般只能有一个线程进行输出操作， 其他线程进行相关运算。在代码中，实现drowning和countdown时均采用一个线程进行倒计时打印，其他线程进行剩余时间和格数大小的计算。
 ## The future game with GUI 可视化实现(未来升级版)
 This is a version unfinished. We use the QT6 library to implement the GUI verison.\
 一个尚未完成开发的版本. 该版本采用QT6库进行重构.\
