@@ -34,12 +34,11 @@ class Snake
 public:
     //Snake();
     Snake(int gameBoardWidth, int gameBoardHeight, int initialSnakeLength, terrain Terrain = Plain, int difficulty = 0);
-    Snake(int gameBoardWidth, int gameBoardHeight, int initialSnakeLength, int mode);
     // Set random seed
     void setRandomSeed();
     // Initialize snake
-    void initializeSnake();
-    void initializeSnake_run();
+    virtual void initializeSnake();
+
     // Checking API for generating random food
     int isPartOfSnake(int x, int y);
     void senseFood(SnakeBody food);
@@ -52,23 +51,20 @@ public:
     bool toHitSelf() const;
     bool toHitMountain() const;
 
-    bool checkCollision();
+    virtual bool checkCollision();
 
     bool changeDirection(Direction newDirection = Direction::Up);
     void simulateDirection(int, int);
     std::vector<SnakeBody>& getSnake();
     int getLength() const;
+
     SnakeBody createNewHead() const;
-    bool moveFoward();
+
+    virtual bool moveFoward();
+
     void hasWalls(bool);
     void manualOrMachine(bool);
     std::unique_ptr<Terrain> mTerrain;
-
-    //Battle
-    bool magnetFood();                      //�����жϾ�������ʯʱ�Ƿ��������ʳ��
-    int& getMagnetTime();                   //��������ʯʱ��
-    void through();
-    Direction getdirection();
 
 protected:
     const int mGameBoardWidth;
@@ -82,10 +78,6 @@ protected:
     bool manual = true;
     int machineSmartness = 0;
 
-    //Battle
-    std::vector<std::pair<char,SnakeBody>> sFood;
-    int time_magnet;
-    int snake_mode;
     //auxiliary function
     int randomInteger(int low, int high) const;
 

@@ -2,12 +2,10 @@
 #include <cstdlib>
 #include <ctime>
 #include <cmath>
-#include <cassert>
 
 SnakeBody::SnakeBody()
 {
 }
-
 
 SnakeBody::SnakeBody(int x, int y): mX(x), mY(y)
 {
@@ -46,43 +44,23 @@ Snake::Snake(int gameBoardWidth, int gameBoardHeight, int initialSnakeLength, te
     this->mTerrain->initializeTerrain(difficulty);
 }
 
-Snake::Snake(int gameBoardWidth, int gameBoardHeight, int initialSnakeLength,int mode): mGameBoardWidth(gameBoardWidth), mGameBoardHeight(gameBoardHeight), mInitialSnakeLength(initialSnakeLength),snake_mode(mode)
-{
-    this->setRandomSeed();
-    if(snake_mode==1)
-        this->initializeSnake();
-    else if(snake_mode==2)
-        this->initializeSnake_run();
-    this->mTerrain.reset(new Terrain(gameBoardWidth, gameBoardHeight, Plain));
-
-}
-
 void Snake::setRandomSeed()
 {
     // use current time as seed for random generator
-    std::srand(std::time(NULL));
+    std::srand(std::time(nullptr));
 }
 
 void Snake::initializeSnake()
 {
     // Instead of using a random initialization algorithm
-    // We always put the snake at the center of the game mWindows
+    // We always put the snake at the center of the game mWindows.
     int centerX = this->mGameBoardWidth / 2;
     int centerY = this->mGameBoardHeight / 2;
-
     for (int i = 0; i < this->mInitialSnakeLength; i++)
     {
         this->mSnake.push_back(SnakeBody(centerX, centerY + i));
     }
     this->mDirection = Direction::Up;
-}
-
-void Snake::initializeSnake_run()
-{
-    int centerY = this->mGameBoardHeight / 2;
-    for(int i = 0;i < 6; i++)
-        this->mSnake.push_back(SnakeBody(6-i,centerY));
-    this->mDirection = Direction::Right;
 }
 
 int Snake::isPartOfSnake(int x, int y)
@@ -94,10 +72,6 @@ int Snake::isPartOfSnake(int x, int y)
     return -1;
 }
 
-/*
- * Assumption:
- * Only the head would hit wall.
- */
 bool Snake::hitWall() const
 {
     return mSnake[0].getX() == 0 ||
@@ -106,9 +80,6 @@ bool Snake::hitWall() const
             mSnake[0].getY() == mGameBoardHeight - 1;
 }
 
-/*
- * The snake head is overlapping with its body
- */
 bool Snake::hitSelf() const
 {
     //check if the snake has hit itself.
@@ -117,7 +88,6 @@ bool Snake::hitSelf() const
         if (mSnake[i].getX() ==  mSnake[0].getX() && mSnake[i].getY() == mSnake[0].getY()) return true;
     }
     return false;
-
 }
 
 bool Snake::toHitWall() const
@@ -134,7 +104,6 @@ bool Snake::toHitWall() const
     {
         return false;
     }
-
 }
 
 bool Snake::toHitSelf() const
@@ -701,10 +670,10 @@ SnakeBody Snake::createNewHead() const
     int width = currentHead.getX();
     int height = currentHead.getY();
     switch(this->mDirection){
-        case Direction::Up : height -= 1; break;
-        case Direction::Down : height += 1; break;
-        case Direction::Left : width -= 1; break;
-        case Direction::Right : width += 1; break;
+        case Direction::Up : height--; break;
+        case Direction::Down : height++; break;
+        case Direction::Left : width--; break;
+        case Direction::Right : width++; break;
     };
 
     SnakeBody newHead(width, height);
@@ -713,10 +682,6 @@ SnakeBody Snake::createNewHead() const
 
 bool Snake::moveFoward()
 {
-    /*
-    * move the snake forward.
-     * If eat food, return true, otherwise return false
-     */
     SnakeBody newHead = this->createNewHead();
     //No-wall
     if (!has_walls)
@@ -756,59 +721,18 @@ bool Snake::checkCollision()
     }
 }
 
-void Snake::hasWalls(bool has_walls) {
-    this->has_walls = has_walls;
-}
-
 int Snake::getLength() const
 {
     return this->mSnake.size();
 }
 
+void Snake::hasWalls(bool has_walls) {
+    this->has_walls = has_walls;
+}
+
 void Snake::manualOrMachine(bool flag)
 {
     this->manual = !flag;
-}
-
-//Battle
-void Snake::through()
-{
-    int headx=this->mSnake[0].getX();
-    int heady=this->mSnake[0].getY();
-    SnakeBody head;
-    if(mDirection == Direction::Up && heady == 0)
-        head = SnakeBody(headx,mGameBoardHeight-2);
-    else if(mDirection == Direction::Down && heady==mGameBoardHeight-1)
-        head = SnakeBody(headx,1);
-    else if(mDirection == Direction::Left && headx == 0)
-        head = SnakeBody(mGameBoardWidth-2,heady);
-    else
-        head = SnakeBody(1,heady);
-    this->mSnake.insert(this->mSnake.begin(),head);
-    this->mSnake.pop_back();
-}
-
-bool Snake::magnetFood()
-{
-    SnakeBody newHead=this->getSnake()[0];
-    for(int i=newHead.getX()-3;i<newHead.getX()+4;i++){
-        for(int j=newHead.getY()-3;j<newHead.getY()+4;j++){
-            SnakeBody temp=SnakeBody(i,j);
-            if(this->mFood == temp)
-                return true;
-        }
-    }
-    return false;
-}
-
-int& Snake::getMagnetTime()
-{
-    return this->time_magnet;
-}
-
-Direction Snake::getdirection()
-{
-    return this->mDirection;
 }
 
 //aux

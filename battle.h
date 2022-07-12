@@ -2,6 +2,7 @@
 #define BATTLE_H
 
 #include "game.h"
+#include "snake_battle.h"
 
 class Battle:public Game{
 public:
@@ -23,8 +24,8 @@ public:
     void runGame_main();         //����ģʽ������Ϸ
     void runGame_run();       //�ܿ�ģʽ������Ϸ
     void runGame_crucial();      //����ģʽ������Ϸ
-    void renderPoints() const override;
-    void renderDifficulty() const override;
+    void renderPoints() const;
+    void renderDifficulty() const;
 
     void createRandomFood();
     void createRandomSpecialFood();          //����ģʽ�������ʳ��
@@ -102,18 +103,10 @@ private:
     // We need to have two windows
     // One is for game introduction
     // One is for game mWindows
-    //int mScreenWidth;
-    //int mScreenHeight;
-    //int mGameBoardWidth;
-    //int mGameBoardHeight;
     int mInformationHeight = 6;
     int mInstructionWidth = 18;
     // Snake information
-    //const int mInitialSnakeLength = 2;
-    //const char mSnakeSymbol = '@';
-    //std::unique_ptr<Snake> mPtrSnake;
-    // Food information
-    //SnakeBody mFood;
+    std::unique_ptr<snake_battle> bPtrSnake;
 
     std::vector<std::pair<char,SnakeBody>> sFood;
     std::vector<std::pair<char,SnakeBody>> sTerrain;
@@ -121,8 +114,7 @@ private:
     std::vector<std::pair<char,SnakeBody>> sTerrain_run;
 
     const char mFoodSymbol = '#';        //   ��ͨʳ��
-    //int mPoints = 0;
-    //int mDifficulty = 0;
+
     int mDifficulty_Extra = 0;           //����ģʽ����ʳ��'*'����ĸ����Ѷ�
     int mBaseDelay = 200;
     int mDelay=200;

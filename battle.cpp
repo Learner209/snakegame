@@ -1,4 +1,5 @@
 #include "battle.h"
+#include "snake_battle.h"
 
 #include <string>
 #include <cmath>
@@ -11,10 +12,19 @@
 using namespace std;
 Battle::Battle():Game()
 {
-    this->mInformationHeight = 6;
+    this->mWindows.resize(3);
+    initscr();
+    nodelay(stdscr, true);
+    keypad(stdscr, true);
+    noecho();
+    curs_set(0);
+    getmaxyx(stdscr, this->mScreenHeight, this->mScreenWidth);
+    this->mGameBoardWidth = this->mScreenWidth - this->mInstructionWidth;
+    this->mGameBoardHeight = this->mScreenHeight - this->mInformationHeight;
     this->createInformationBoard();
     this->createGameBoard();
     this->createInstructionBoard();
+    this->mLeaderBoard.assign(this->mNumLeaders, 0);
 }
 
 Battle::~Battle()
@@ -508,7 +518,9 @@ void Battle::initializeGame()
     switch(this->mode)
     {
         case 1:
-            this->mPtrSnake = std::make_unique<Snake>(this->mGameBoardWidth, this->mGameBoardHeight, 2,1);
+            this->bPtrSnake = std::make_unique<snake_battle>(this->mGameBoardWidth, this->mGameBoardHeight, 2, 1);
+            mvwprintw(this->mWindows[0], 0, 0, "%s", std::to_string(this->bPtrSnake->getLength()).c_str());
+            wrefresh(this->mWindows[0]);
             mPoints=0;
             mDifficulty=0;
             mDifficulty_Extra=0;
@@ -526,7 +538,7 @@ void Battle::initializeGame()
             time_magnet=0;
             break;
         case 2:
-            this->mPtrSnake = std::make_unique<Snake>(this->mGameBoardWidth, this->mGameBoardHeight, 6,2);
+            this->bPtrSnake = std::make_unique<snake_battle>(this->mGameBoardWidth, this->mGameBoardHeight, 6, 2);
             mDelay=200;
             sFood_run.clear();
             sTerrain_run.clear();
@@ -536,7 +548,7 @@ void Battle::initializeGame()
             victory=true;
             break;
         case 3:
-            this->mPtrSnake = std::make_unique<Snake>(this->mGameBoardWidth, this->mGameBoardHeight, 6,2);
+            this->bPtrSnake = std::make_unique<snake_battle>(this->mGameBoardWidth, this->mGameBoardHeight, 6, 2);
             mBaseDelay=200;
             bomb.clear();
             ammunition.clear();
@@ -597,10 +609,11 @@ void Battle::createRandomFood()         //需要加入一些判断
     while(true){
         int foodx = rand() % (this->mGameBoardWidth - 2) + 1;
         int foody = rand() % (this->mGameBoardHeight - 2) + 1;
+
         SnakeBody FOOD(foodx,foody);
         int check=0;
 
-        for(SnakeBody x:this->mPtrSnake->getSnake()){
+        for(SnakeBody x:this->bPtrSnake->getSnake()){
             if(x==FOOD){
                 check=1;
                 break;
@@ -652,7 +665,7 @@ void Battle::createRandomFood()         //需要加入一些判断
         }
         if(check==0){
             this->mFood=FOOD;
-            this->mPtrSnake->senseFood(FOOD);
+            this->bPtrSnake->senseFood(FOOD);
             return;
         }
         else
@@ -667,7 +680,7 @@ void Battle::createRandomFood_run()
         int foody = (rand() % (this->mGameBoardHeight- 2)) + 1;
         SnakeBody FOOD(foodx,foody);
         int check=0;
-        for(SnakeBody x:this->mPtrSnake->getSnake()){
+        for(SnakeBody x:this->bPtrSnake->getSnake()){
             if(x==FOOD){
                 check=1;
                 break;
@@ -708,8 +721,8 @@ void Battle::renderFood() const
 
 void Battle::renderSnake() const
 {
-    int snakeLength = this->mPtrSnake->getLength();
-    std::vector<SnakeBody>& snake = this->mPtrSnake->getSnake();
+    int snakeLength = this->bPtrSnake->getLength();
+    std::vector<SnakeBody>& snake = this->bPtrSnake->getSnake();
     for (int i = 0; i < snakeLength; i++)
     {
         mvwaddch(this->mWindows[1], snake[i].getY(), snake[i].getX(), this->mSnakeSymbol);
@@ -728,28 +741,28 @@ void Battle::controlSnake()
         case 'w':
         case KEY_UP:
         {
-            this->mPtrSnake->changeDirection(Direction::Up);
+            this->bPtrSnake->changeDirection(Direction::Up);
             break;
         }
         case 'S':
         case 's':
         case KEY_DOWN:
         {
-            this->mPtrSnake->changeDirection(Direction::Down);
+            this->bPtrSnake->changeDirection(Direction::Down);
             break;
         }
         case 'A':
         case 'a':
         case KEY_LEFT:
         {
-            this->mPtrSnake->changeDirection(Direction::Left);
+            this->bPtrSnake->changeDirection(Direction::Left);
             break;
         }
         case 'D':
         case 'd':
         case KEY_RIGHT:
         {
-            this->mPtrSnake->changeDirection(Direction::Right);
+            this->bPtrSnake->changeDirection(Direction::Right);
             break;
         }
         default:
@@ -758,18 +771,17 @@ void Battle::controlSnake()
         }
     }
     if(mechanism==3){
-        SnakeBody head=mPtrSnake->createNewHead();
-        mPtrSnake->getSnake().pop_back();
-        int i;
-        for(i=0;i<Box.size();i++){
-            if(Box[i]==head){
-                Box[i]=mPtrSnake->createNewHead();
-                mPtrSnake->getSnake().erase(mPtrSnake->getSnake().begin());
+        SnakeBody head = bPtrSnake->createNewHead();
+        bPtrSnake->getSnake().pop_back();
+        for(int i = 0 ; i < Box.size(); i++){
+            if(Box[i] == head){
+                Box[i] = bPtrSnake->createNewHead();
+                bPtrSnake->getSnake().erase(bPtrSnake->getSnake().begin());
                 break;
             }
         }
     }
-    else if(this->mPtrSnake->moveFoward()){
+    else if(this->bPtrSnake->moveFoward()){
         this->createRandomFood();
         if(mode==1){
             if(this->check_double>0){
@@ -784,7 +796,7 @@ void Battle::controlSnake()
         }
         else if(mode==3){
             lives+=2;
-            this->mPtrSnake->getSnake().pop_back();
+            this->bPtrSnake->getSnake().pop_back();
         }
     }
 
@@ -802,28 +814,28 @@ void Battle::control_mach2()
         case 'w':
         case KEY_UP:
         {
-            this->mPtrSnake->changeDirection(Direction::Up);
+            this->bPtrSnake->changeDirection(Direction::Up);
             break;
         }
         case 'S':
         case 's':
         case KEY_DOWN:
         {
-            this->mPtrSnake->changeDirection(Direction::Down);
+            this->bPtrSnake->changeDirection(Direction::Down);
             break;
         }
         case 'A':
         case 'a':
         case KEY_LEFT:
         {
-            this->mPtrSnake->changeDirection(Direction::Left);
+            this->bPtrSnake->changeDirection(Direction::Left);
             break;
         }
         case 'D':
         case 'd':
         case KEY_RIGHT:
         {
-            this->mPtrSnake->changeDirection(Direction::Right);
+            this->bPtrSnake->changeDirection(Direction::Right);
             break;
         }
         default:
@@ -831,8 +843,8 @@ void Battle::control_mach2()
             break;
         }
     }
-    this->mPtrSnake->createNewHead();
-    this->mPtrSnake->getSnake().pop_back();
+    this->bPtrSnake->createNewHead();
+    this->bPtrSnake->getSnake().pop_back();
 }
 
 void Battle::controlSnake_run()
@@ -845,18 +857,18 @@ void Battle::controlSnake_run()
         case 'w':
         case KEY_UP:
         {
-            this->mPtrSnake->changeDirection(Direction::Up);
-            this->mPtrSnake->moveFoward();
-            this->mPtrSnake->changeDirection(Direction::Right);
+            this->bPtrSnake->changeDirection(Direction::Up);
+            this->bPtrSnake->moveFoward();
+            this->bPtrSnake->changeDirection(Direction::Right);
             break;
         }
         case 'S':
         case 's':
         case KEY_DOWN:
         {
-            this->mPtrSnake->changeDirection(Direction::Down);
-            this->mPtrSnake->moveFoward();
-            this->mPtrSnake->changeDirection(Direction::Right);
+            this->bPtrSnake->changeDirection(Direction::Down);
+            this->bPtrSnake->moveFoward();
+            this->bPtrSnake->changeDirection(Direction::Right);
             break;
         }
         default:
@@ -864,7 +876,7 @@ void Battle::controlSnake_run()
             break;
         }
     }
-    this->mPtrSnake->moveFoward();
+    this->bPtrSnake->moveFoward();
 }
 
 void Battle::controlSnake_confusion()
@@ -877,28 +889,28 @@ void Battle::controlSnake_confusion()
         case 'w':
         case KEY_UP:
         {
-            this->mPtrSnake->changeDirection(Direction::Down);
+            this->bPtrSnake->changeDirection(Direction::Down);
             break;
         }
         case 'S':
         case 's':
         case KEY_DOWN:
         {
-            this->mPtrSnake->changeDirection(Direction::Up);
+            this->bPtrSnake->changeDirection(Direction::Up);
             break;
         }
         case 'A':
         case 'a':
         case KEY_LEFT:
         {
-            this->mPtrSnake->changeDirection(Direction::Right);
+            this->bPtrSnake->changeDirection(Direction::Right);
             break;
         }
         case 'D':
         case 'd':
         case KEY_RIGHT:
         {
-            this->mPtrSnake->changeDirection(Direction::Left);
+            this->bPtrSnake->changeDirection(Direction::Left);
             break;
         }
         default:
@@ -907,18 +919,18 @@ void Battle::controlSnake_confusion()
         }
     }
     if(mechanism==3){
-        SnakeBody head=mPtrSnake->createNewHead();
-        mPtrSnake->getSnake().pop_back();
+        SnakeBody head=bPtrSnake->createNewHead();
+        bPtrSnake->getSnake().pop_back();
         int i;
         for(i=0;i<Box.size();i++){
             if(Box[i]==head){
-                Box[i]=mPtrSnake->createNewHead();
-                mPtrSnake->getSnake().erase(mPtrSnake->getSnake().begin());
+                Box[i]=bPtrSnake->createNewHead();
+                bPtrSnake->getSnake().erase(bPtrSnake->getSnake().begin());
                 break;
             }
         }
     }
-    else if(this->mPtrSnake->moveFoward()){
+    else if(this->bPtrSnake->moveFoward()){
         this->createRandomFood();
         if(mode==1){
             if(this->check_double>0){
@@ -933,7 +945,7 @@ void Battle::controlSnake_confusion()
         }
         else if(mode==3){
             lives+=2;
-            this->mPtrSnake->getSnake().pop_back();
+            this->bPtrSnake->getSnake().pop_back();
         }
     }
 }
@@ -978,7 +990,7 @@ void Battle::createRandomSpecialFood()
         int foody=(rand() % (this->mGameBoardHeight-2))+1;
         SnakeBody FOOD(foodx,foody);
         int check=0;
-        for(SnakeBody x:this->mPtrSnake->getSnake()){
+        for(SnakeBody x:this->bPtrSnake->getSnake()){
             if(x==FOOD){
                 check=1;
                 break;
@@ -1021,7 +1033,7 @@ void Battle::createRandomSpecialTerrain()
         int foody=(rand() % (this->mGameBoardHeight-2))+1;
         SnakeBody FOOD(foodx,foody);
         int check=0;
-        for(SnakeBody x:this->mPtrSnake->getSnake()){
+        for(SnakeBody x:this->bPtrSnake->getSnake()){
             if(x==FOOD){
                 check=1;
                 break;
@@ -1177,7 +1189,7 @@ void Battle::way1()
             int foody=(rand() % (this->mGameBoardHeight-2))+1;
             SnakeBody FOOD(foodx,foody);
             int check=0;
-            for(SnakeBody x:this->mPtrSnake->getSnake()){
+            for(SnakeBody x:this->bPtrSnake->getSnake()){
                 if(x==FOOD){
                     check=1;
                     break;
@@ -1294,7 +1306,7 @@ void Battle::way4()
             int foody=(rand() % (this->mGameBoardHeight-2))+1;
             SnakeBody FOOD(foodx,foody);
             int check=0;
-            for(SnakeBody x:this->mPtrSnake->getSnake()){
+            for(SnakeBody x:this->bPtrSnake->getSnake()){
                 if(x==FOOD){
                     check=1;
                     break;
@@ -1341,7 +1353,7 @@ void Battle::way4()
 
 void Battle::attack()
 {
-    if(this->mPtrSnake->getSnake()[0]==boss){
+    if(this->bPtrSnake->getSnake()[0]==boss){
         if(lives>5){
             //lives-=5;
             livesBOSS-=harm*5;
@@ -1376,9 +1388,9 @@ void Battle::lightAttack()
         reserve=0;
         return;
     }
-    Direction dir=mPtrSnake->getdirection();
-    int headx=mPtrSnake->getSnake()[0].getX();
-    int heady=mPtrSnake->getSnake()[0].getY();
+    Direction dir=bPtrSnake->getdirection();
+    int headx=bPtrSnake->getSnake()[0].getX();
+    int heady=bPtrSnake->getSnake()[0].getY();
     if(dir==Direction::Down){
         while(heady<mGameBoardHeight){
             light.push_back(SnakeBody(headx,heady));
@@ -1419,7 +1431,7 @@ void Battle::moveboss()
         int foody=(rand() % (this->mGameBoardHeight-2))+1;
         SnakeBody FOOD(foodx,foody);
         int check=0;
-        for(SnakeBody x:this->mPtrSnake->getSnake()){
+        for(SnakeBody x:this->bPtrSnake->getSnake()){
             if(x==FOOD){
                 check=1;
                 break;
@@ -1467,7 +1479,7 @@ void Battle::checkSFood()
     if(mode==1){
         for(int i=0;i<this->sFood.size();i++){
             std::pair<char,SnakeBody> x=this->sFood[i];
-            if(x.second==this->mPtrSnake->getSnake()[0])
+            if(x.second==this->bPtrSnake->getSnake()[0])
             {
                 if(x.first=='*'){
                     int judge=rand() % 10 +1;
@@ -1489,7 +1501,7 @@ void Battle::checkSFood()
                     }
                     else{
                         this->time_magnet=20000;
-                        this->mPtrSnake->getMagnetTime()=20000;
+                        this->bPtrSnake->getMagnetTime()=20000;
                     }
                 }
 
@@ -1511,7 +1523,7 @@ void Battle::checkSFood()
     if(mode==2){
         for(int i=0;i<this->sFood_run.size();i++){
             SnakeBody x=this->sFood_run[i];
-            if(x==this->mPtrSnake->getSnake()[0]){
+            if(x==this->bPtrSnake->getSnake()[0]){
                 lives++;
                 sFood_run.erase(sFood_run.begin()+i);
                 return;
@@ -1548,7 +1560,7 @@ void Battle::checkSTerrain()
     if(mode==1){
         for(int i=0;i<this->sTerrain.size();i++){
             std::pair<char,SnakeBody> x=this->sTerrain[i];
-            if(x.second==this->mPtrSnake->getSnake()[0])
+            if(x.second==this->bPtrSnake->getSnake()[0])
             {
                 if(x.first=='~'){
                     this->time_invincible=5000;
@@ -1556,17 +1568,17 @@ void Battle::checkSTerrain()
                 }
                 else if(x.first=='H'){
                     if(time_invincible<=0)
-                        this->mPtrSnake->getSnake()[0]=SnakeBody(0,0);
+                        this->bPtrSnake->getSnake()[0]=SnakeBody(0,0);
                 }
 
                 else if(x.first=='h'){
                     sTerrain.erase(sTerrain.begin()+i);
                     i--;
-                    this->mPtrSnake->getSnake().erase(this->mPtrSnake->getSnake().begin());
+                    this->bPtrSnake->getSnake().erase(this->bPtrSnake->getSnake().begin());
                     mPoints--;
                 }
                 else{
-                    this->mPtrSnake->through();
+                    this->bPtrSnake->through();
                 }
                 return;
             }
@@ -1577,7 +1589,7 @@ void Battle::checkSTerrain()
             std::pair<char,SnakeBody> x=this->sTerrain_run[i];
             int px=x.second.getX();
             int py=x.second.getY();
-            if(this->mPtrSnake->isPartOfSnake(px,py) != -1){
+            if(this->bPtrSnake->isPartOfSnake(px,py)){
                 lives--;
                 sTerrain_run.erase(sTerrain_run.begin()+i);
                 i--;
@@ -1592,7 +1604,7 @@ void Battle::checkSTerrain()
                     SnakeBody x=this->bomb[i];
                     int px=x.getX();
                     int py=x.getY();
-                    if(this->mPtrSnake->isPartOfSnake(px,py) != -1){
+                    if(this->bPtrSnake->isPartOfSnake(px,py)){
                         lives-=harmBOSS;
                         checkConfusion+=harmBOSS;
                         bomb.erase(bomb.begin()+i);
@@ -1605,7 +1617,7 @@ void Battle::checkSTerrain()
                     SnakeBody x=ammunition[i].second;
                     int px=x.getX();
                     int py=x.getY();
-                    if(this->mPtrSnake->isPartOfSnake(px,py) != -1){
+                    if(this->bPtrSnake->isPartOfSnake(px,py)){
                         lives-=harmBOSS;
                         checkConfusion+=harmBOSS;
                     }
@@ -1616,7 +1628,7 @@ void Battle::checkSTerrain()
                     SnakeBody x=this->swamp[i];
                     int px=x.getX();
                     int py=x.getY();
-                    if(this->mPtrSnake->isPartOfSnake(px,py) != -1){
+                    if(this->bPtrSnake->isPartOfSnake(px,py)){
                         time_lowspeed=5000;
                     }
                 }
@@ -1626,7 +1638,7 @@ void Battle::checkSTerrain()
             SnakeBody x=this->soldier[i];
             int px=x.getX();
             int py=x.getY();
-            if(this->mPtrSnake->isPartOfSnake(px,py) != -1){
+            if(this->bPtrSnake->isPartOfSnake(px,py)){
                 if(armor=="B")
                     lives++;
                 else if(time_invincible<=0){
@@ -1670,10 +1682,10 @@ void Battle::moveScene()
         pair<char,SnakeBody> p=make_pair(sTerrain_run[i].first,SnakeBody(x,y));
         sTerrain_run[i]=p;
     }
-    for(int i=0;i<mPtrSnake->getSnake().size();i++){
-        SnakeBody a=mPtrSnake->getSnake()[i];
+    for(int i=0;i<bPtrSnake->getSnake().size();i++){
+        SnakeBody a=bPtrSnake->getSnake()[i];
         int x=a.getX()-1;
-        mPtrSnake->getSnake()[i]=SnakeBody(x,a.getY());
+        bPtrSnake->getSnake()[i]=SnakeBody(x,a.getY());
     }
 }
 
@@ -1686,7 +1698,7 @@ void Battle::createRandomBomb()
             int foody=(rand() % (this->mGameBoardHeight-2))+1;
             SnakeBody FOOD(foodx,foody);
             int check=0;
-            for(SnakeBody x:this->mPtrSnake->getSnake()){
+            for(SnakeBody x:this->bPtrSnake->getSnake()){
                 if(x==FOOD){
                     check=1;
                     break;
@@ -1742,7 +1754,7 @@ void Battle::renderLight()
 
 void Battle::checkLight()
 {
-    for(SnakeBody x:this->mPtrSnake->getSnake()){
+    for(SnakeBody x:this->bPtrSnake->getSnake()){
         if(x.getY()==pos_light && time_light>0 &&time_warning<=0)
             lives=0;
     }
@@ -1758,10 +1770,12 @@ void Battle::runGame_main()
     {
         this->time_temp=clock();
         this->renderBoards();
+
         if(time_confusion>0)
             this->controlSnake_confusion();
         else
             this->controlSnake();
+
         if(time_invincible>0){
             this->mDelay=50;
         }
@@ -1777,10 +1791,11 @@ void Battle::runGame_main()
         this->adjustScene();
         this->renderSFood();
         this->renderSTerrain();
-        if(this->time_invincible <=0 && this->mPtrSnake->checkCollision())
+
+        if(this->time_invincible <=0 && this->bPtrSnake->checkCollision())
             break;
-        if(this->time_invincible >0 && this->mPtrSnake->hitWall())
-            this->mPtrSnake->through();
+        if(this->time_invincible >0 && this->bPtrSnake->hitWall())
+            this->bPtrSnake->through();
         std::this_thread::sleep_for(std::chrono::milliseconds(this->mDelay));
         refresh();
         this->time_finish=clock();
@@ -1789,7 +1804,7 @@ void Battle::runGame_main()
         int time_this_step=time_finish-time_temp;
         if(time_magnet>0){
             time_magnet-=time_this_step;
-            this->mPtrSnake->getMagnetTime()-=time_this_step;
+            this->bPtrSnake->getMagnetTime()-=time_this_step;
         }
         if(time_confusion>0){
             time_confusion-=time_this_step;
@@ -1825,7 +1840,7 @@ void Battle::runGame_run()
             this->renderWarning();
         else if(time_light>0)
             this->renderLight();
-        if(this->mPtrSnake->hitWall())
+        if(this->bPtrSnake->hitWall())
             lives = 0;
         if(this->checkDeath()){
             if(reviveCoins == 0){
@@ -1918,12 +1933,12 @@ void Battle::runGame_crucial()
             this->renderSTerrain();
             if(time_invincible<=0 && time_lowspeed<=0)
                 this->adjustDelay();
-            if(this->time_invincible <=0 && this->mPtrSnake->checkCollision()){
+            if(this->time_invincible <=0 && this->bPtrSnake->checkCollision()){
                 checkConfusion+=lives;
                 lives=0;
             }
-            if(this->time_invincible >0 && this->mPtrSnake->hitWall())
-                this->mPtrSnake->through();
+            if(this->time_invincible >0 && this->bPtrSnake->hitWall())
+                this->bPtrSnake->through();
             if(this->checkDeath()){
                 if(reviveCoins==0){
                     victory=false;
@@ -2036,19 +2051,19 @@ void Battle::specialMechanism2()
     time_invincible=0;
     time_confusion=0;
     time_mechanism2=50000;
-    this->mPtrSnake = std::make_unique<Snake>(this->mGameBoardWidth, this->mGameBoardHeight, 6,2);
+    this->bPtrSnake = std::make_unique<snake_battle>(this->mGameBoardWidth, this->mGameBoardHeight, 6, 2);
     createOrbit();
-    while(this->mPtrSnake->getSnake()[0].getX()!=69 && time_mechanism2>=0){
+    while(this->bPtrSnake->getSnake()[0].getX()!=69 && time_mechanism2>=0){
         this->time_temp=clock();
         this->renderBoards();
         this->renderSnake();
 
         this->controlSnake();
-        if(this->mPtrSnake->hitWall())
+        if(this->bPtrSnake->hitWall())
         {
-            mPtrSnake->through();
+            bPtrSnake->through();
         }
-        SnakeBody head=mPtrSnake->getSnake()[0];
+        SnakeBody head=bPtrSnake->getSnake()[0];
         if(head.getX()>=20){
             int index;
             for(index=0;index<orbit.size();index++){
@@ -2056,7 +2071,7 @@ void Battle::specialMechanism2()
                     break;
             }
             if(index==orbit.size())
-                this->mPtrSnake = std::make_unique<Snake>(this->mGameBoardWidth, this->mGameBoardHeight, 6,2);
+                this->bPtrSnake = std::make_unique<snake_battle>(this->mGameBoardWidth, this->mGameBoardHeight, 6, 2);
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(150));
@@ -2068,7 +2083,7 @@ void Battle::specialMechanism2()
         int time_this_step=time_finish-time_temp;
         time_mechanism2-=time_this_step;
     }
-    if(this->mPtrSnake->getSnake()[0].getX()==69)
+    if(this->bPtrSnake->getSnake()[0].getX()==69)
     {
         if_crack2=true;
     }
@@ -2100,9 +2115,9 @@ void Battle::specialMechanism3()
         this->renderboss();
         this->renderSnake();
         this->renderBox();
-        if(this->mPtrSnake->hitWall())
+        if(this->bPtrSnake->hitWall())
         {
-            mPtrSnake->through();
+            bPtrSnake->through();
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(120));
         refresh();
@@ -2147,9 +2162,9 @@ void Battle::specialMechanism4()
         this->renderSnake();
         this->renderDoor();
 
-        if(this->mPtrSnake->hitWall())
+        if(this->bPtrSnake->hitWall())
         {
-            mPtrSnake->through();
+            bPtrSnake->through();
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(120));
         refresh();
@@ -2213,7 +2228,7 @@ void Battle::createDoor()
             int check=0;
             if(FOOD==boss)
                 check=1;
-            for(SnakeBody x : mPtrSnake->getSnake()){
+            for(SnakeBody x : bPtrSnake->getSnake()){
                 if(x==FOOD){
                     check=1;
                     break;
@@ -2244,7 +2259,7 @@ void Battle::createDoor()
             int check=0;
             if(FOOD==boss)
                 check=1;
-            for(SnakeBody x : mPtrSnake->getSnake()){
+            for(SnakeBody x : bPtrSnake->getSnake()){
                 if(x==FOOD){
                     check=1;
                     break;
@@ -2276,7 +2291,7 @@ void Battle::createDoor()
 
 void Battle::changeDoor()
 {
-    SnakeBody head =mPtrSnake->getSnake()[0];
+    SnakeBody head =bPtrSnake->getSnake()[0];
     for(int i=0;i<DoorLeft.size();i++){
         if(head == DoorLeft[i]){
             DoorLeft.erase(DoorLeft.begin()+i);
@@ -2327,7 +2342,7 @@ void Battle::createBox()
             int check=0;
             if(FOOD==boss)
                 check=1;
-            for(SnakeBody x : mPtrSnake->getSnake()){
+            for(SnakeBody x : bPtrSnake->getSnake()){
                 if(x==FOOD){
                     check=1;
                     break;

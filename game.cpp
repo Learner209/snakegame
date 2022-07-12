@@ -1,4 +1,3 @@
-#include <cassert>
 #include "game.h"
 #include "battle.h"
 
@@ -12,6 +11,7 @@
 #include <algorithm>
 
 //Initialize
+//Game::participants :0/Solo :1/Double :2/Survival 3:/Crucial
 int Game::participants = 0;
 bool Game::dynamic_difficulty = true;
 bool Game::has_walls = true;
@@ -772,11 +772,11 @@ void Game::renderMode()
         }
         else if(Game::participants == 2)
         {
-            participantString = "CRUCIAL MODE";
+            participantString = "SURVIVAL MODE";
         }
         else if(Game::participants == 3)
         {
-            participantString = "SURVIVAL MODE";
+            participantString = "CRUCIAL MODE";
         }
         std::vector<std::string> terrainVector = {"Easy", "Medium", "Hard"};
 
@@ -869,8 +869,9 @@ void Game::renderMode()
             int height = (mScreenHeight - 8) / 2, width = (mScreenWidth - 20) / 2;
             WINDOW *modeWin = newwin(8, 20, height, width);
             box(modeWin, 0, 0);
-            std::vector<std::string> participants = {"SOLO", "DOUBLE", "CRUCIAL MODE", "SURVIVAL MODE"};
-            switch (Game::participants) {
+            std::vector<std::string> participants = {"SOLO", "DOUBLE", "SURVIVAL MODE", "CRUCIAL MODE"};
+            switch (Game::participants)
+            {
                 case 0:
                 {
                     choice = this->menuSelect(modeWin, participants, 2, 2, 1, 0);
@@ -1717,15 +1718,14 @@ Status Double::runGame()
             }
             else if (*signal != aEND_OF_THE_GAME && *signal != bEND_OF_THE_GAME)
             {
+                this->renderTerrain(this->aPtrSnake, this->mWindows[1]);
+                this->renderTerrain(this->bPtrSnake, this->mWindows[2]);
+
                 this->renderFood(this->bFood, this->mWindows[2]);
                 this->renderSnake(this->bPtrSnake, this->mWindows[2]);
 
                 this->renderFood(this->aFood, this->mWindows[1]);
                 this->renderSnake(this->aPtrSnake, this->mWindows[1]);
-
-                this->renderTerrain(this->aPtrSnake, this->mWindows[1]);
-                this->renderTerrain(this->bPtrSnake, this->mWindows[2]);
-
                 doupdate();
             }
             else if (*signal == aEND_OF_THE_GAME)
@@ -1799,62 +1799,6 @@ Status Double::runGame()
                 {
                     *drowningSignal = NORMAL;
                 }
-                /*if (this->aPtrSnake->mTerrain->inVector(this->aPtrSnake->mTerrain->getTerrains(), aBlock))
-                {
-                    if (*drowningSignal == bDROWNING)
-                    {
-                        *drowningSignal = DROWNING;
-                    }
-                    else if(*drowningSignal == NORMAL)
-                    {
-                        *drowningSignal = aDROWNING;
-                    }
-                    mvwprintw(this->mWindows[0], 4, 1, "Drowning:");
-                    mvwprintw(this->mWindows[0], 4, (this->mScreenWidth - 1 - 5), "%s", aCountdown->c_str());
-                    for (int i = 0; i < *aDrownSize; i++)
-                    {
-                        mvwaddch(this->mWindows[0], 4, i + 1 + 9, ACS_CKBOARD);
-                    }
-                }
-                else
-                {
-                    if(*drowningSignal == aDROWNING)
-                    {
-                        *drowningSignal = NORMAL;
-                    }
-                    else if (*drowningSignal == DROWNING)
-                    {
-                        *drowningSignal = bDROWNING;
-                    }
-                }
-                if (this->bPtrSnake->mTerrain->inVector(this->bPtrSnake->mTerrain->getTerrains(), bBlock))
-                {
-                    if (*drowningSignal == aDROWNING)
-                    {
-                        *drowningSignal = DROWNING;
-                    }
-                    else if(*drowningSignal == NORMAL)
-                    {
-                        *drowningSignal = bDROWNING;
-                    }
-                    mvwprintw(this->mWindows[0], 5, 1, "Drowning:");
-                    mvwprintw(this->mWindows[0], 5, (this->mScreenWidth - 1 - 5), "%s", bCountdown->c_str());
-                    for (int i = 0; i < *bDrownSize; i++)
-                    {
-                        mvwaddch(this->mWindows[0], 5, i + 1 + 9, ACS_CKBOARD);
-                    }
-                }
-                else
-                {
-                    if(*drowningSignal == bDROWNING)
-                    {
-                        *drowningSignal = NORMAL;
-                    }
-                    else if (*drowningSignal == DROWNING)
-                    {
-                        *drowningSignal = aDROWNING;
-                    }
-                }*/
             }
             //  render the countdown
             //  update other game states and refresh the window
@@ -1949,7 +1893,7 @@ void Game::startGame() {
                 break;
             }
             case MODE: {
-                if (participants)
+                if (participants == 0)
                 {
                     play = solo;
                 }
@@ -1962,7 +1906,7 @@ void Game::startGame() {
                 break;
             }
             case SETTINGS: {
-                if (participants)
+                if (participants == 0)
                 {
                     play = solo;
                 }
