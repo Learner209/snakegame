@@ -39,7 +39,9 @@ Our team also develops a snakegame with the C++ and ncurses library. This game n
 *   *Has dynamic difficulty*: the API provided for users to control whether the velocity will be dynamically modified when our snake is on its wonderful journey. When it is on, the velocity of the speed will ascend (the Difficulty will rise by one) whenever the player gain five more points.
 *   *Has walls*: the API furnished for users to decide whether the field has walls along the process. 
  
-*	
+*   *难度*：表征蛇移动速度。蛇的移动速度随着难度递增呈指数级增长。底层的实现机制决定了蛇的移动速度为 $\dfrac{1}{0.75^{\mathrm{难度}}}$单元每毫秒。
+*   *动态调整难度*：为用户提供的接口以控制蛇的速度是否会在游戏过程中动态调整。当动态调整难度处于*On*状态，蛇的移动速度会在游戏过程中动态调整（难度会上升一个单元）每当用户另得五分。
+*   *墙壁*: 为用户提供的接口以决定游戏区域边界是否有墙。
 ### Double
  
 *   *Speed*: Velocity of the snake. The velocity of the snake skyrockets in exponential frame as the difficulty rises up. The underlying mechanism denotes that the velocity of the snake is $\dfrac{1}{0.8^{\mathrm{difficulty}}}$ units per milliesecond \(The base is modified form 0.75 to 0.8 as the player enjoys the game in a smaller frame of window\).
@@ -47,6 +49,13 @@ Our team also develops a snakegame with the C++ and ncurses library. This game n
 *   *Has walls*: it works the same with the one in the Solo mode.
 *   *Man to ?*: The opponent type. You will be confronting you peer under "**Man to Man**" mode. However, you will be confronting a machine snake whose wisdom and smartness tops the pinnacle of human's intelligence when under the "**Man to Computer**" mode.
 *   *Difficulty*: this item will only show up if you are under "**Man to Computer Mode**". Categorized into *"Easy"*, *"Normal"*, *"Medium"*, *"Hard"*, the difficulty is the epitome of the smartness of the machine snake. Tricky and prudent as the machine snake is, this Difficulty may still save you from being smashed by the computer. The underlying mechanism is to use the theory of probability and four indexs to compose the overall intelligence level of the machine snake. \(Mistackle: the indication of the snake's probability of missing the food. Strike: the embodiment of the snaks's capability of hitting the food in short range. MoveBack: the abstraction of the snake's ability of the sharpness of sensing the food. Collision: the conceptualization of the snake's ability to avoid the collision. The machine snake operates on these four indexes which are dynamically altered in accordance with the Difficulty the uses has chosen and the velocity of the two snakes.\)\.
+ 
+ *   *速度*：蛇移动速度。蛇的移动速度随着难度递增呈指数级增长。底层的实现机制决定了蛇的移动速度为 $\dfrac{1}{0.8^{\mathrm{难度}}}$单元每毫秒。\(底数从0.75调整为0.8因为玩家将在一个更小的窗口操纵他们的蛇。
+ *   *倒计时*：两位玩家相互竞争的时间限制。当在设置中调整倒计时时，光标会紧随用户输入出现。如果用户输入Backsapce键，光标会回退到前一位数字。如果用户对输入的倒计时不满意，尽情点击倒计时的首位数字来重新输入心仪的倒计时。\(提示: 一个警告窗口会短暂弹出如果用户输入一个不合法的倒计时。 一个合法的倒计时被定义为任意介于00：00到9：59的格式为“分钟：秒”的输入。\)
+ *   *墙壁*：与单人模式的*墙壁*作用相同。
+ *   *人对？*: 选择对手类型。如果选择“人对人”模式， 你将会与你的朋友一决高下。但是如果选择“人对电脑”模式， 你将会和一个具有智能的机器人同场竞技。
+ *   *难度*： 这个选项只有用户处于“人对电脑”模式下才会出现。被划分为“简单”，“普通”， “中等”， “困难”四个级别， 难度代表着机器蛇的智能水平。尽管机器蛇极其谨慎与聪明，但这个*难度*接口将会防止你被机器蛇零封。底层机制运用了概率论和四个指数来构成机器蛇的综合智能水平。\(错失食物：蛇在靠近食物所在行于列时错失食物的量度。 打击:事物在近距离时吃到食物的成功率的量度。 嗅觉：蛇感受食物的敏锐程度的抽象化。 碰撞： 蛇躲避撞击的能力的量化。 机器蛇以这四个指数为基础实现操作， 而四个指数会随着玩家所选难度和移动速度而动态调整。\)
+ 
  
 ### Survival Mode
 This mode is for survive mode. In this mode, we have different kinds of food: 
