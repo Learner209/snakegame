@@ -1,5 +1,7 @@
 
 
+
+
 import os
 import fitz
 import cv2
@@ -126,15 +128,38 @@ def combine2pdf(folderPath, pdfFilePath):
             pngFile = pngFile.convert("RGB")
         sources.append(pngFile)
     output.save(pdfFilePath, "pdf", save_all=True, append_images=sources)
+    for picpath in pngFiles:
+        if os.path.exists(picpath):
+            os.remove(picpath)
 
+def reverse_a_PDF_from_dir(filename, dirpath, destination):
+    
+    if not isinstance(dirpath, str) or not os.path.exists(dirpath):
+        return
+    pic_store_path = conver_img(file_dir = dirpath, filename = filename)
+    read_images_from_dir(dirpath = pic_store_path)
+    combine2pdf(pic_store_path, destination)
+
+def reverse_all_PDFs_from_dir(dirpath, destination):
+    '''
+    Reverse the colour of all PDFs in the target_directory(dirpath)
+    And store all the reversed PDFs in the destination
+    destination has to be the destination dir
+    '''
+    if not isinstance(dirpath, str) or not os.path.exists(dirpath):
+        return
+  
+    ThreadList = list()
+    cnt = 0
+    for file in os.listdir(dirpath):
+        if file.endswith('.pdf'):
+            ThreadList.append(Thread(name="ReverseThread", target=reverse_a_PDF_from_dir, args=[file, dirpath, os.path.join(destination, '%s.pdf'%cnt)]))
+            ThreadList[len(ThreadList)-1].start()
+            cnt+=1
+    for thread in ThreadList:
+        thread.join()
 
 if __name__ == "__main__":
     target_dir = 'pdf'
-    filename = "9.pdf"
-    filenames = get_file_name(file_dir)
-    print(filenames)
-
-    pic_store_path = conver_img(file_dir = target_dir, filename = filename)
-    read_images_from_dir(dirpath = pic_store_path)
-    pdfFile = "jpg2pdf"
-    combine2pdf(pic_store_path, 'destination/pdf')
+    reverse_all_PDFs_from_dir(dirpath='pdf', destination='destination')
+    
